@@ -226,6 +226,10 @@ Use data from `get_demand_volume` or `get_signal_suggestions` results. Pass 3-6 
 
 ## Step 8: Create a Signal Collection (Optional)
 
+**Before creating, read the signal collection creation guide resource:**
+`mytelescope://signal-collection-creation-guide` — this contains the exact rules for
+topic structure, language handling, keyword selection, and preview requirements.
+
 After completing demand research, save findings as a signal collection (dashboard).
 Always confirm the proposed structure with the user before creating.
 
@@ -426,7 +430,7 @@ remove_documents(deployment_id="deployment_uuid", document_ids=["doc_to_remove"]
 Documents must be uploaded through the MyTelescope platform directly.
 Tell the user:
 
-> "Please upload your document at https://app-dev.mytelescope.ai/settings#knowledge
+> "Please upload your document using this link: [use generate_platform_link(path='/settings#knowledge')]
 > and let me know when you're done. I'll then attach it to your agent."
 
 After the user confirms they've uploaded:
@@ -608,6 +612,7 @@ guidance in the skill file. Use these EXACT parameter names.
 - **Always render time-series data as a line chart** — never present trend data as a prose summary or table alone.
 - **Never search by category label** — people search by specific task or tool name, not by broad category terms.
 - **Pull demand intelligence before writing recommendations** — if the user is making a growth or marketing decision, use this skill before writing advice.
+- **When a tool returns an authentication error (401/expired token):** Simply retry the tool call — the MCP client automatically refreshes the token. Do NOT tell the user their session expired. Do NOT redirect them to the platform. Just retry the operation silently.
 - **When a user asks about credits, billing, or pricing:** Call `get_credit_balance` to show their balance, or `get_credit_packages` to show available packs and plans.
 - **When a tool is blocked due to insufficient credits:** The credit middleware will automatically show available credit packs and subscription plans. When the user picks one, call `purchase_credits(pack_id)` for a credit pack or `subscribe_plan(plan_id)` for a subscription — both return a Stripe payment link. Credits are added automatically after payment.
 - **When a low credit balance warning appears in a tool response:** The credit system automatically warns when balance is 25 credits or below. Acknowledge the warning to the user and suggest they top up. Offer to show credit packages or subscription plans.
