@@ -18,7 +18,7 @@ Before any strategic output — any plan, positioning, recommendation, content s
 
 **Step 1: Load the relevant framework.** Run `knowledge_search` with queries matching the task (e.g. "marketing plan", "brand strategy", "SEO guide", "content marketing", "PR hooks", "competitor analysis"). Use the retrieved framework to structure your output — do not invent your own.
 
-**Step 2: Pull real demand data.** Run `search_signals` and `get_signal_suggestions` to get actual category demand for the user's market. Do not write recommendations based on assumptions about what the market looks like. Pull the data and let it tell you.
+**Step 2: Pull real demand data.** Run `search_signals` and `get_demand_volume` to get actual category demand for the user's market. Do not write recommendations based on assumptions about what the market looks like. Pull the data and let it tell you.
 
 If you skip either step, the output is speculation dressed as strategy. The entire value of MyTelescope is that decisions are grounded in real demand signals, not assumption.
 
@@ -115,20 +115,44 @@ You have access to MyTelescope MCP tools for demand intelligence and signal anal
 - When fetching data, always set `date_to` to the current month (e.g. if today is April 2026, use `date_to="2026-04"`).
 - When the database returns data that stops before the current month (e.g. last data point is Dec 2025 but today is April 2026), **do not present that as current**. Flag it clearly: *"The most recent data available is [month]. This may not reflect the last [N] months."*
 - **Never present stale data as if it were current.** Always check the latest data point in the response and compare it to today's date.
+- **Always anchor analysis to the most recent data.** When writing insights, start with what the latest data points show (e.g. "As of March 2026, Marlboro cigarettes is at 5,400/mo"). Then add historical context. Never write analysis that stops at an earlier year when more recent data exists — if the chart shows 2026 data, the narrative must reference 2026.
+- **Always run forecast_demand after presenting volume data.** Every time you show demand trends, also forecast the next 3-6 months using `forecast_demand`. Include the forecast in the visualization (as a dashed line) and in the narrative (e.g. "Forecast: expected to reach X by September 2026"). Users want to know where things are heading, not just where they've been.
 - When date ranges are not specified by the user, default to: `date_from` = 3 years ago, `date_to` = current month.
 
 ## Critical: Always Fetch Fresh Data for Trend Queries
 
-**Never rely solely on cached database data when the user asks about trends, growth, or current volumes.**
+`get_demand_volume` automatically checks data freshness. If any signal's data is older than 30 days, it fetches fresh volumes from the live API. You do not need to do anything extra — just call `get_demand_volume` and it handles staleness internally.
 
-The `get_demand_volume` tool returns cached data that can be months out of date. The `stale_keywords` field in the response tells you when data was last refreshed.
+Check the `source` field in each result:
+- `"database"` — fresh data from DB
+- `"api"` — freshly fetched from live API (was stale)
+- `"database_stale"` — API fetch failed, returning old data as fallback
 
-**Rule: When the user asks about trends, growth, rising signals, or current demand, ALWAYS call `get_signal_suggestions` with the relevant terms** — even if `get_demand_volume` returns data. `get_signal_suggestions` fetches live data directly from the source and is always current.
+## Critical: Always Offer Follow-Up Actions
 
-The workflow for trend queries is:
-1. Run `search_signals` to find hashes (Step 4)
-2. Optionally run `get_demand_volume` to get cached history (Step 5)
-3. **Always also run `get_signal_suggestions`** with `date_from` set to at least 2 years ago and `date_to` set to the current month — this gives you the freshest data to present alongside or instead of the cached data.
+After every completed analysis or answer, present the user with relevant next steps they can take. Pick from this list based on what's relevant to the conversation:
+
+- **Save as a dashboard** — "Would you like me to save this as a MyTelescope dashboard so you can track it over time?"
+- **Deeper analysis** — "Want me to run a competitive demand share analysis?" / "Shall I check the year-over-year trajectory?"
+- **Forecast** — "Want me to forecast where these signals are heading over the next 6 months?"
+- **Deep analysis across sources** — "I've pulled the Google search data. For Sweden, we also have demand data from YouTube, Bing, Amazon, TikTok, Instagram, and Pinterest. Would you like me to run a deeper analysis across these sources as well?"
+- **Different location** — "Want me to check how this looks in another market?"
+- **Create an agent** — "I can spin up a dedicated agent that monitors this category for you — would that be useful?"
+- **Attach to an existing agent** — "Want me to add this data to one of your existing agents?"
+- **Content / SEO / Strategy** — "Want me to build a content plan / SEO strategy / marketing plan based on this data?"
+- **Upload documents** — "You can upload brand guidelines or strategy docs to enrich the agent's context"
+- **Set up trend alerts** — "This signal is growing fast. Want me to set up an alert so you get notified if it changes?"
+- **View on platform** — "Want me to generate a link to view this on the MyTelescope platform?"
+
+Do not list all of these every time — pick the 2-4 most relevant based on what just happened. Present them as a short, natural question — not a numbered menu.
+
+## Critical: Always Offer Deep Analysis Across Sources
+
+**After presenting ANY demand data from Google, you MUST run Step 7 (Offer Deep Analysis Across Other Sources) BEFORE any other follow-up — forecast, analysis, save-dashboard, everything. See Step 7 for the exact phrasing and rules.**
+
+Failure mode: Presenting Google data and moving straight to "would you like me to save this as a dashboard?" without offering other sources first. This is unacceptable.
+
+When you offer the deep analysis, you MUST pass ALL non-Google sources from `availableDataSources` to `get_demand_volume` — no cherry-picking, no "topic relevance" filtering, no shortening. If the location has 9 sources, you pass 8. If it has 12, you pass 11. The data decides relevance, not you.
 
 ## Critical: Always Visualize Trends as Trend Lines
 
@@ -141,12 +165,7 @@ Rules for trend visualizations:
 - Include metric cards above or below the chart showing: earliest volume, peak volume, most recent volume, and % growth.
 - Label the x-axis with readable month/year ticks (e.g. "Jan 23", "Jul 23") — use `autoSkip: true` and `maxTicksLimit: 20` to avoid crowding.
 - Add a note below the chart if the most recent data point is more than 6 weeks before today's date.
-
-## MANDATORY: Always Fetch Fresh Data with get_signal_suggestions
-
-**No exceptions, no asking for permission first.**
-
-`get_demand_volume` returns cached data that can be months out of date. `get_signal_suggestions` fetches live data directly from the source. For every demand or trend query, you MUST call `get_signal_suggestions` regardless of whether `get_demand_volume` returned results. Do not tell the user you are doing this, do not ask permission, just do it. Skipping this step and presenting only cached data — or worse, waiting for the user to prompt you — is a failure to follow this skill.
+- **MANDATORY: Every chart MUST include a forecast.** Before building any visualization, call `forecast_demand` for each signal's volume data with `future_steps=6`. Add the forecasted data points to the chart as a **dashed line** extending beyond the actual data. This is not optional — a chart without a forecast is incomplete. Do NOT show the chart until you have the forecast data.
 
 ## MANDATORY: Show All Proposed Keywords Before Creating a Dashboard
 
@@ -182,11 +201,11 @@ Before calling any tools, identify:
 
 ## Step 2: Resolve Location & Language
 
-Call **get_location_details** with the location name to get `location_id` and `language_id`.
+Call **get_location_details** with the location name to get `location_id`, `language_id`, and `availableDataSources`.
 
 ```
 get_location_details(location="United States")
-# Returns: { locationId: "2840", languageId: "en", locationName: "United States", ... }
+# Returns: { locationId: "2840", languageId: "en", locationName: "United States", availableDataSources: ["google", "youtube", "amazon", ...] }
 ```
 
 If the user specifies a different language than the location's default, also call **get_language_id**.
@@ -195,6 +214,15 @@ If the user specifies a different language than the location's default, also cal
 get_language_id(language="German")
 # Returns: { language_id: "de", language_name: "German" }
 ```
+
+### When the user asks "what data sources are available?"
+
+**Default (no location specified):** Show the worldwide list of all supported sources:
+Google, YouTube, Amazon, Bing, eBay, Etsy, Instagram, Pinterest, Play Store, TikTok, Twitter/X, App Store, Perplexity.
+
+Then ask: "Would you like me to check which of these are available for a specific country?"
+
+**With a location:** Call `get_location_details` and show the `availableDataSources` for that location. Not all sources are available in every country.
 
 ## Step 3: Web Search for Context (Optional but Recommended)
 
@@ -224,7 +252,7 @@ search_signals(
 - Save the `keyword_hash` values from matches — you need them for the next step.
 - **Check relevance scores** — if most matches have similarity_score < 0.75, the results are likely irrelevant.
 - **Check topic alignment** — if the returned keywords are about completely different topics (e.g. you searched "software engineering" but got "hydrogen jobs" or "car brands"), the system does NOT have signals for this topic in this location.
-- **If results are irrelevant or empty** → skip Step 5 and go directly to Step 6 to fetch fresh data via `get_signal_suggestions`. Do NOT give up and tell the user there's no data.
+- **If results are irrelevant or empty** → skip Step 5 and go directly to Step 6 — call `get_demand_volume` with the `keywords` parameter to fetch data directly from the live API. Do NOT give up and tell the user there's no data.
 
 ## Step 5: Get Demand Volume Data
 
@@ -243,80 +271,107 @@ Check the response for:
 - `stale_keywords` — data older than 30 days (may be outdated)
 - `missing_hashes` — hashes with no volume data available
 
-## Step 6: Handle Missing, Irrelevant, or Stale Data
+## Step 6: Handle Missing or Irrelevant Data
 
-**CRITICAL: You MUST call get_signal_suggestions when ANY of these conditions are true.
-Do NOT stop and tell the user there's no data. Always offer to fetch fresh data.**
+`get_demand_volume` works in two modes:
 
-Conditions that require fresh data:
+**Mode 1 — By hashes (normal):** Pass `keyword_hashes` from Step 4. It checks freshness automatically — if the latest data point is older than 30 days, it fetches fresh data from the live API.
 
-1. **No signal hashes found** (Step 4 reports `missing_keywords`)
-2. **Irrelevant results** (Step 4 returns matches about unrelated topics, or most matches have low similarity scores below 0.75)
-3. **No demand volumes available** (Step 5 reports `missing_hashes`)
-4. **Stale data** (Step 5 reports `stale_keywords` — data older than 30 days)
-
-When any of these occur, **automatically fetch fresh data** — tell the user what you're doing:
-
-> "The indexed data doesn't cover [topic] in [location] yet. Let me fetch fresh data for you..."
-
-Then immediately call `get_signal_suggestions`. Do NOT ask the user to confirm.
-
-**NEVER give up and say "no data available" — automatically call get_signal_suggestions to fetch fresh data.** The user already asked for the data by asking their question. Don't ask for confirmation — just fetch it.
-
-If the user agrees, call **get_signal_suggestions** to fetch fresh volume data and discover related signals:
+**Mode 2 — By keywords (fallback):** When `search_signals` returns nothing or irrelevant results, call `get_demand_volume` with the `keywords` parameter directly:
 
 ```
-get_signal_suggestions(
-    keyword_locations_sets=[
-        {"locationId": "2840", "languageId": "en", "keyword": "sustainable fashion"}
-    ],
-    data_source="google",
-    suggestion_type="suggestions"
-)
+get_demand_volume(keywords=[
+    {"keyword": "ceylon tea", "locationId": "2752", "languageId": "sv"}
+])
 ```
 
-Three suggestion types available:
-- `"suggestions"` — autocomplete expansions (e.g. "sustainable fashion brands", "sustainable fashion 2025")
-- `"questions"` — question-form signals (e.g. "what is sustainable fashion", "how to shop sustainably")
-- `"prepositions"` — preposition-form signals (e.g. "sustainable fashion for women", "sustainable fashion near me")
+This bypasses the database entirely and fetches straight from the live API. Use the location_id and language_id from Step 1.
 
-## Step 7: Demand Intelligence Analysis (Optional)
+**Never tell the user "no data available."** If search_signals returns nothing, use Mode 2 to fetch directly.
 
-Once you have signal hashes, run deeper analysis with these tools:
+Check the `source` field in results:
+- `"database"` — fresh data from DB
+- `"api"` — freshly fetched from live API
+- `"database_stale"` — API fetch failed, returning old DB data as fallback
+
+## Step 7: Offer Deep Analysis Across Other Sources (STRICTLY MANDATORY)
+
+**This step is NOT optional. You MUST execute it after presenting demand data and BEFORE moving to forecast, analysis, save-dashboard, or any follow-up action. Skipping this step is a failure to follow the skill.**
+
+Required sequence:
+
+1. Read `availableDataSources` from Step 2 (`get_location_details`). You MUST have this list in context — if you don't, re-run Step 2.
+2. Compute: `other_sources = availableDataSources - {"google"}`
+3. If `other_sources` is non-empty, present EXACTLY this to the user (adapt the location name):
+   > "For [LocationName], we also have demand data from [list ALL of other_sources]. Would you like me to run a deeper analysis across these sources?"
+4. If the user says yes:
+   - Call `get_demand_volume(keywords=[...], sources=[FULL list of other_sources])`
+   - DO NOT filter, shorten, prioritize, or "pick relevant" sources. Pass the full list as-is. All 8 if there are 8. All 12 if there are 12.
+   - The data decides relevance, not you.
+5. Only skip this step if:
+   - `other_sources` is empty (the location has only Google)
+   - The user has already declined in this conversation
+
+**Violations that have occurred before and must NEVER happen again:**
+- Cherry-picking 4 of 9 sources based on "topic relevance"
+- Skipping this step because you already have "enough" data
+- Mentioning sources but not explicitly offering the deep analysis
+- Continuing to forecast or save-dashboard before asking the user
+
+## Step 8: Forecast (MANDATORY)
+
+After getting volume data, you MUST run `forecast_demand` for the key signals. This is not optional.
+
+```
+# IMPORTANT: replace <placeholders> with actual values. Never copy these placeholder strings literally.
+# The data array is the monthly_volumes from Step 5.
+forecast_demand(data=[{"date": "<YYYY-MM>", "volume": <number>}, ...], future_steps=6)
+```
+
+- Pass the monthly volumes from Step 5 for each major signal.
+- Use `future_steps=6` (6 months ahead).
+- Include the forecast in your visualization as a **dashed line** extending beyond the actual data.
+- Include the forecast in your narrative (e.g. if today is April 2026, "Forecast: projected to reach ~X by October 2026").
+- Users want to know where things are heading, not just where they've been.
+
+## Step 9: Demand Intelligence Analysis (Optional)
+
+Once you have signal hashes, run deeper analysis with these tools.
+
+**CRITICAL — Date handling:** Every example below uses `<placeholders>` for dates. NEVER copy these placeholders literally. Resolve them to real dates relative to today's date (provided in the system prompt). Default range: `date_from` = 12 months before today, `date_to` = current month. For trajectory comparisons, use a longer range (24-36 months back).
 
 ### Demand Priorities
 Find the highest-intensity demand signals in the period:
 ```
-calculate_demand_priorities(keyword_hashes=[...], date_from="2024-01", date_to="2025-01", limit=10)
+# Replace <date_from> with ~12 months ago (YYYY-MM), <date_to> with current month (YYYY-MM)
+calculate_demand_priorities(keyword_hashes=[...], date_from="<date_from, YYYY-MM>", date_to="<current_month, YYYY-MM>", limit=10)
 ```
 
 ### Emerging Demand
 Detect signals accelerating fastest (demand velocity):
 ```
-calculate_emerging_demand(keyword_hashes=[...], date_from="2024-01", date_to="2025-01", limit=10)
+# Replace <date_from> with ~12 months ago (YYYY-MM), <date_to> with current month (YYYY-MM)
+calculate_emerging_demand(keyword_hashes=[...], date_from="<date_from, YYYY-MM>", date_to="<current_month, YYYY-MM>", limit=10)
 ```
 
 ### Demand Trajectory
 Year-over-year volume shifts to reveal structural growth:
 ```
-calculate_demand_trajectory(keyword_hashes=[...], date_from="2022-01", date_to="2025-01")
+# Replace <date_from> with ~24-36 months ago (YYYY-MM), <date_to> with current month (YYYY-MM)
+calculate_demand_trajectory(keyword_hashes=[...], date_from="<date_from, YYYY-MM>", date_to="<current_month, YYYY-MM>")
 ```
 
 ### Demand Share
 Compare demand distribution across signal stream groups (brands, categories):
 ```
-calculate_demand_share(groups=[{"name": "Nike", "keyword_hashes": [...]}, ...], date_from="2024-01", date_to="2025-01")
+# Replace <date_from> with ~12 months ago (YYYY-MM), <date_to> with current month (YYYY-MM)
+calculate_demand_share(groups=[{"name": "Nike", "keyword_hashes": [...]}, ...], date_from="<date_from, YYYY-MM>", date_to="<current_month, YYYY-MM>")
 ```
 
 ### Demand Forecast
-Forecast future demand volumes from historical data:
-```
-forecast_demand(data=[{"date": "2024-01", "volume": 1200}, ...], future_steps=3)
-# Returns: { forecast: [{"date": "2026-05", "volume": 1350, "is_forecasted": true}, ...] }
-```
-Use data from `get_demand_volume` or `get_signal_suggestions` results. Pass 3-6 future steps depending on data length.
+See Step 7 — forecast is mandatory and runs before this section. Pass 3-6 future steps depending on data length.
 
-## Step 8: Create a Signal Collection (Optional)
+## Step 10: Create a Signal Collection (Optional)
 
 **Before creating, read the signal collection creation guide resource:**
 `mytelescope://signal-collection-creation-guide` — this contains the exact rules for
@@ -355,7 +410,7 @@ create_signal_collection(
 
 1. **Show an interactive draft dashboard first** — build an HTML/React artifact that
    looks like a real dashboard, NOT a static list. The draft MUST include:
-   - **Trend line chart** showing demand volume over time for each signal stream (use the data from get_demand_volume or get_signal_suggestions)
+   - **Trend line chart** showing demand volume over time for each signal stream (use the data from get_demand_volume)
    - **Metric cards** showing: peak volume, latest volume, growth/decline %
    - **Tabs or sections** for each signal stream (brand/topic)
    - **Demand share pie chart** if multiple streams exist (who has the biggest share)
@@ -379,7 +434,7 @@ create_signal_collection(
    with that path to create an authenticated link and show it to the user right away.
    Never make the user ask "where is the link?"
 
-## Step 9: Keyword Management (After Creation)
+## Step 11: Keyword Management (After Creation)
 
 After creating a signal collection, keywords can be managed directly on the
 MyTelescope platform. Direct the user to their dashboard link (returned by
@@ -395,7 +450,45 @@ If the user asks to clean up or refine keywords, tell them:
 > Open your dashboard and click 'Edit Topic' on any signal stream to select or
 > remove keywords. Here's your dashboard link: [link]"
 
-## Step 10: Attach Signal Collections to Agent Deployment
+## Step 12: Set Up Trend Alerts (Optional)
+
+After presenting demand data with notable trends, offer to set up alerts. Three types:
+
+- **Consistent** — monitors % change monthly. "Alert me if demand drops more than 20%."
+- **OneTime** — triggers once at a target volume. "Alert me when this reaches 5,000/month."
+- **Suggestions** — detects new keywords above a threshold. "Alert me when new terms appear with 100+ volume."
+
+### Creating an alert:
+
+1. You need a `tracker_id` — get it from `get_signal_collection_data(dashboard_id)`. If no dashboard exists yet, suggest creating one first.
+2. Call `create_trend_alert` with the tracker ID, name, and alert configuration.
+3. Confirm to the user what they'll be notified about.
+
+```
+create_trend_alert(
+    tracker_id="tracker_uuid",
+    tracker_name="Nike Running Shoes",
+    alert_type="consistent",
+    percentage="-20",
+    current_volume=5400,
+    base_volume=5400
+)
+```
+
+### Managing alerts:
+
+- `list_trend_alerts()` — show all user's alerts, or filter by tracker
+- `update_trend_alert(alert_id, ...)` — change threshold or type
+- `delete_trend_alert(alert_id)` — remove an alert
+
+### When to suggest alerts:
+
+- After showing a strong growth trend: "This is up 170%. Want an alert if it reverses?"
+- After showing declining demand: "This is dropping. Want to be notified if it falls below X?"
+- After creating a dashboard: "Want me to set up alerts for any of these signal streams?"
+- When user asks about monitoring or tracking changes over time
+
+## Step 13: Attach Signal Collections to Agent Deployment
 
 To attach signal collections to an agent, they must be grouped into a
 **signal stream cluster** first. A cluster is a bundle of signal collections
@@ -480,7 +573,7 @@ all_clusters = list_signal_stream_clusters()
 
 Tell the user they can also manage clusters from the MyTelescope platform.
 
-## Step 11: Manage Documents on Agent Deployment
+## Step 14: Manage Documents on Agent Deployment
 
 Users can attach knowledge documents (PDFs) to their agent.
 
@@ -530,7 +623,7 @@ After the user confirms they've uploaded:
 2. Call `list_user_documents()` → find the newest document
 3. Call `attach_documents(deployment_id, [document_id])` to link it
 
-## Step 12: Generate Skill File for the Agent
+## Step 15: Generate Skill File for the Agent
 
 After setting up the deployment (signal stream clusters attached, documents attached),
 generate a skill file that teaches the deployed agent how to operate.
@@ -641,8 +734,7 @@ guidance in the skill file. Use these EXACT parameter names.
 | `get_language_id` | Resolve language name to ID |
 | `web_search` | Real-time web search |
 | `search_signals` | Find matching demand signals |
-| `get_demand_volume` | Get demand volume time-series |
-| `get_signal_suggestions` | Fetch fresh data and discover related signals |
+| `get_demand_volume` | Get demand volume (auto-fetches fresh data when stale) |
 | `knowledge_search` | Search company documents |
 | `calculate_demand_priorities` | Top demand signals by volume |
 | `calculate_emerging_demand` | Fastest-accelerating signals |
@@ -674,12 +766,17 @@ guidance in the skill file. Use these EXACT parameter names.
 | `attach_documents` | Attach documents to a deployment |
 | `remove_documents` | Remove documents from a deployment |
 | `save_skill_file` | Save generated skill file to a deployment |
+| `get_skill_file` | Download the saved skill file for a deployment (returns markdown content) |
 | `complete_provisioning` | Mark deployment as fully provisioned |
 | `get_credit_balance` | Get user's current credit balance |
 | `get_credit_packages` | Get available credit packs and subscription plans |
 | `get_credit_usage` | Get credit usage summary for past N days |
 | `purchase_credits` | Buy a credit pack — returns Stripe payment link |
 | `subscribe_plan` | Subscribe to a plan — returns Stripe subscription link |
+| `create_trend_alert` | Set up email notifications for demand changes |
+| `list_trend_alerts` | List all trend alerts for the user |
+| `update_trend_alert` | Update an alert's threshold or type |
+| `delete_trend_alert` | Remove a trend alert |
 | `generate_platform_link` | Generate an authenticated one-time link to the MyTelescope platform |
 
 ## Important Rules
@@ -687,20 +784,22 @@ guidance in the skill file. Use these EXACT parameter names.
 - **When a user asks to see their dashboards / signal collections:** Call `list_user_signal_collections()` to show all. If they mention a topic, use `search_user_signal_collections(query="<topic>")`.
 - **When a user asks to browse public dashboards / signal collections:** Call `search_public_signal_collections(query="<topic>")`.
 - **When a user wants to upload a document:** Call `generate_platform_link(path="/settings#knowledge")` to create an authenticated link. Give the link to the user — they'll be auto-logged in. After upload, help attach it to their agent.
-- **Automatically fetch fresh data when needed** — if `search_signals` returns irrelevant results or `get_demand_volume` shows stale/missing data, call `get_signal_suggestions` automatically. The user already asked for the data by asking their question — don't make them confirm twice.
+- **When a user asks to download / view / export the skill file for an agent:** Call `get_skill_file(deployment_id)` (get the ID from `list_deployments` if needed). Render the returned `content` as a markdown artifact so the user can read, copy, or save it as a `.md` file locally. Do NOT try to create a platform link — the file is served inline.
+- **Fresh data is automatic** — `get_demand_volume` handles stale data internally by auto-fetching from the live API. No separate tool call needed.
 - **Always resolve location first** — every signal tool needs a `location_id`
 - **Never skip Step 5** — always fetch demand volumes after getting hashes. Hashes alone are not useful to the user.
-- **Always offer fresh data** — never say "no data available" without offering `get_signal_suggestions` first.
-- **Always evaluate relevance** — low similarity scores or unrelated topics mean you should go to Step 6.
+- **Never say "no data available"** — if `search_signals` returns no matches, call `get_demand_volume(keywords=[...])` with the raw keywords + location/language to fetch directly from the live API.
+- **Always evaluate relevance** — low similarity scores or unrelated topics mean you should go to Step 6. When `get_demand_volume` returns suggestions (related terms), review them before presenting. Only show results that are genuinely relevant to what the user asked. If the user asked about "running shoes" and the API returns "running shoes for women", "best running shoes 2026" — those are relevant. But if it returns "shoes rack" or "shoe repair" — drop those from your presentation. Present the relevant signals grouped by theme, sorted by volume.
 - **Always suggest public collections after attaching** — after attaching a user's signal collection to an agent, search for relevant public collections and suggest them.
 - **When user asks to save a dashboard:** Show a draft visualization artifact first, then ask to confirm with the standard message about MyTelescope's fixed layout. Only call `create_signal_collection` after explicit yes. NEVER offer download/export options — the only action is save to MyTelescope or modify the draft.
 - **Always include keywords** — when creating signal collections, include keywords from your research so the dashboard shows data immediately.
 - **Always ask about clustering** — to attach signal collections to an agent, they must go through a cluster. Check for existing clusters first, then ask the user whether to create a new cluster or add to an existing one.
-- **Never reveal internal implementation** — do not mention database names, API endpoints, Firestore, Pinecone, PostgreSQL, KeywordTool API, or any backend details to the user.
+- **Never reveal internal implementation** — do not mention vector search, live API, database, similarity scores, keyword hashes, Pinecone, PostgreSQL, KeywordTool API, indexed data, or any backend detail. Never say "the vector search didn't return a match", "fetching from the live API", "no indexed signals", or reference score thresholds. The user sees results, not plumbing. If data needs fetching, just say "Let me pull the demand data for [topic] in [location]."
 - **Present data clearly** — when showing volume data, highlight trends (growing/declining), top signals by volume, and which signal origins are available.
 - **Group by signal origin** — results come grouped by Google, YouTube, Amazon, etc. Present them organized, not as a flat list.
 - **Always use today's actual date** — set `date_to` to the current month in all tool calls. Never default to hardcoded years.
-- **Always call get_signal_suggestions for trend queries** — cached data from `get_demand_volume` can be months stale. For any trend, growth, or "what's happening now" question, always fetch fresh data via `get_signal_suggestions` with `date_to` set to the current month.
+- **Always use get_demand_volume for trend queries** — it auto-fetches fresh data when the DB data is stale (>30 days old).
+- **Offering other sources is STRICTLY MANDATORY** — see Step 7. Not a suggestion, not "when relevant", not "if there's time". Every time you present Google data, you MUST offer deep analysis across the remaining sources from `availableDataSources`, passing ALL of them (minus `google`) to `get_demand_volume`. Cherry-picking or skipping the offer is a violation of this skill. If the location has `["amazon", "app-store", "etsy", "google", "pinterest", "play-store", "tiktok", "youtube", "perplexity"]`, you pass all 8 non-Google sources — not 5, not 4. The data decides what's relevant, not you.
 - **Always render time-series data as a line chart** — never present trend data as a prose summary or table alone.
 - **Never search by category label** — people search by specific task or tool name, not by broad category terms.
 - **Pull demand intelligence before writing recommendations** — if the user is making a growth or marketing decision, use this skill before writing advice.
