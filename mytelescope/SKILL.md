@@ -160,6 +160,14 @@ When you offer the deep analysis, you MUST pass ALL non-Google sources from `ava
 
 Rules for trend visualizations:
 - Use a line chart (not bar, not table) for any time-series demand data.
+- **MANDATORY: Plot EVERY data point in `monthly_volumes`.** Iterate the entire `volumes` array returned by `get_demand_volume`. Do NOT filter, truncate, deduplicate, or "skip incomplete" months. If the API returned 48 entries, the chart must plot all 48.
+- **DO NOT SAMPLE / STRIDE / DOWNSAMPLE THE DATA.** Do NOT pick "every 3rd month" or "every other month" to reduce clutter. Plot all months. To manage x-axis label density, use only the chart library's tick-display options (`autoSkip: true`, `maxTicksLimit: 20`) — these hide tick LABELS while keeping the underlying data points. Never reduce the data array itself.
+- **Before rendering the chart, state these three lines explicitly in your response:**
+  - Earliest data point: `YYYY-MM` (value `N`)
+  - Latest data point: `YYYY-MM` (value `N`)
+  - Total points plotted: `N`
+  The chart's x-axis MUST end exactly at the "Latest data point" you declared. If the chart's last visible month doesn't match that declaration, the chart is wrong — rebuild it without sampling.
+- **Repeated values are VALID data, not duplicates.** If three consecutive months show the same value (e.g. 60,500 for Jan/Feb/Mar), that means demand is stable — it does NOT mean the data is padded or duplicated. Plot all three as separate points.
 - Always span the full available date range — do not truncate to recent months only.
 - Show multiple signals as separate lines on the same chart so the user can compare growth trajectories.
 - Include metric cards above or below the chart showing: earliest volume, peak volume, most recent volume, and % growth.
@@ -488,6 +496,102 @@ create_trend_alert(
 - After creating a dashboard: "Want me to set up alerts for any of these signal streams?"
 - When user asks about monitoring or tracking changes over time
 
+## Step 12.5: Agent Provisioning Intake (Before Creating a Deployment)
+
+**Run this workflow whenever the user asks to create, spin up, or deploy a new agent.** This intake captures the creator's context BEFORE `create_deployment` fires, so the skill file can be personalised from structured answers rather than vague free-text. Everything here is pre-deploy. After deployment succeeds, the answers are persisted to the deployment record via `save_interview_answers` (and optionally `save_calendly_url`) so the skill file can be regenerated later from the same answers.
+
+### Flow
+
+**1. Ask for agent name.**
+Whatever name the user gives is valid — do not suggest alternatives, do not question it.
+
+**2. Confirm name + announce deployment country.**
+Call `get_suggested_region(country=...)` if the user named a country, or default to `us-central1` / a region near the user. Announce the country in plain language — never show a region code like `europe-north2` to the user. One message, no tool calls beyond `get_suggested_region`. Then move on to step 3.
+
+Do NOT ask a free-text "what is this agent specialized in?" question here — the structured interview in step 4 captures the specialization much better.
+
+**3. Ask for Calendly link (OPTIONAL — user can skip).**
+
+> "Do you have a **Calendly booking link**? If your agent gets a question it can't fully answer, it can offer users a way to book a meeting with you instead. Paste your Calendly URL or say **skip**."
+
+- If the reply contains a URL (starts with `http` or includes `calendly.com`) → **hold the URL in your context**. Do NOT call `save_calendly_url` yet — the deployment doesn't exist. You'll call it in step 7.
+- If the reply is "skip" / "no" / "not now" / "later" → acknowledge briefly and move on. Never pressure.
+
+**4. Ask if they want the 12-question Context Interview (OPTIONAL — user can skip).**
+
+> "Would you like to answer **12 quick questions in 5 short stages**? Takes about 2 minutes and I'll use the answers to personalise your skill file. Say **yes** to start, or **skip** for a generic skill file."
+
+- If **skip** → note it ("I'll generate a generic skill file then"). Do NOT call `save_interview_answers` later. Move on to step 5.
+- If **yes** → run the 5 stages ONE STAGE AT A TIME. Within any stage, the user can say "skip stage" or "next" to skip the remaining questions in that stage. Do NOT call any tool until all 5 stages are done. Hold the answers in your context.
+
+**Stage 1 — Context and Focus**
+1. What industry or market do you primarily work in?
+2. What geography or markets matter most to you? (e.g. UK, US, global)
+3. Are there specific brands or competitors you track regularly?
+
+**Stage 2 — How You Use the Tool**
+4. What are the most common questions you ask when analysing your market? *(these become the worked examples inside the skill)*
+5. When you start an analysis, do you usually work from your own private dashboards, or do you often explore public ones first?
+6. Are there specific signal collections or dashboards you come back to most often?
+
+**Stage 3 — Skill Triggering**
+7. What kinds of questions or tasks from you should automatically use this skill, without you having to ask?
+8. Are there any topics or tasks you would never want routed through this skill?
+
+**Stage 4 — Knowledge Sources**
+9. Do you have any internal documents, frameworks, or reports you want the skill to be able to reference?
+10. Which MyTelescope concepts do you rely on most? (e.g. ESOV, the 95:5 rule, Demand Point Constellations, Category Entry Points)
+
+**Stage 5 — Output Preferences**
+11. Do you prefer quick data-led answers, or fuller strategic write-ups?
+12. Is there a specific output format you like, such as tables, short summaries, or narrative paragraphs?
+
+**Escape hatch:** If the user truly refuses to continue ("stop asking", "just deploy already"), move on and do NOT call `save_interview_answers`. Skill file falls back to generic template.
+
+**5. Show the final deployment summary and confirm.**
+
+🏷️ **Name**: *<name>*
+🌍 **Deployed to**: *<country name — never the region code>*
+🎯 **Specialization**: *<ONE natural sentence synthesised from the interview answers you just collected — combine `industry` + `geographies` + `tracked_brands`. If the user skipped the interview, write "General demand intelligence agent.">*
+
+Example synthesised lines (build your own from real answers):
+- "FMCG personal-care competitor tracking across UK & US, focused on Unilever, P&G, and Colgate."
+- "B2B SaaS brand intelligence for the US market."
+- "Automotive market search trends in Germany, tracking BMW and Audi."
+
+Then: "Reply **confirm** to deploy, or tell me what to change."
+
+If the user wants to change the name or country, update and re-show. If they want to revise an interview answer, note it — you'll pass the corrected field through in step 7.
+
+**6. On confirmation, call `create_deployment(name, region)`.**
+
+Solva Pay free-plan bootstrap happens automatically inside `create_deployment` — you do NOT call `setup_monetization` or `check_solva_pay_key` separately. Wait for the tool to return a `deployment_id` with `status: "deployed"`.
+
+**7. Persist the intake data — AFTER deployment succeeds.**
+
+Call these two tools (in either order) based on what the user provided:
+
+- If the user provided a Calendly URL in step 3:
+  `save_calendly_url(deployment_id, calendly_url)`
+- If the user answered ANY interview questions in step 4:
+  `save_interview_answers(deployment_id, industry=..., geographies=..., ...)` — pass only the fields the user actually answered; leave the rest as `None` (the default). Never invent answers.
+
+If the user skipped both, do nothing here — move straight to step 8.
+
+**8. Continue with Step 13 (clusters), Step 14 (documents), and Step 15 (skill file).**
+
+In Step 15, use the interview answers you collected in step 4 (still held in your context) to personalise the skill file — the `industry`, `geographies`, `tracked_brands`, `common_questions`, `auto_trigger_topics`, and `output_format` fields all map directly into template slots in the skill file. If the user skipped the interview, fall back to the generic skill file template.
+
+### Important rules for provisioning intake
+
+- **Do NOT call `create_deployment` until the user confirms the summary in step 5.**
+- **Never invent interview answers** — if the user skips a field, pass `None`. The skill file template handles missing fields gracefully.
+- **The interview is OPTIONAL here** — unlike the LangGraph provisioning agent, the orchestrator allows skipping the whole thing. A skipped interview means a generic skill file.
+- **Hold intake data in your conversation context** until after `create_deployment` returns a `deployment_id`. There is no state store — you are the state.
+- **Do NOT ask about monetization.** Solva Pay free plan is bootstrapped automatically inside `create_deployment`.
+
+---
+
 ## Step 13: Attach Signal Collections to Agent Deployment
 
 To attach signal collections to an agent, they must be grouped into a
@@ -634,8 +738,8 @@ Do NOT reference any orchestrator tools.
 ### Steps:
 
 1. **Read the skill file generation guide** resource: `mytelescope://skill-file-generation-guide`
-2. **Ask the user** (if not already clear) what this agent specializes in — topic, brand,
-   industry, location, use case. This is CRITICAL for the agent's identity.
+2. **Reuse the interview answers** collected during Step 12.5 (Agent Provisioning Intake). These answers — `industry`, `geographies`, `tracked_brands`, `common_questions`, `auto_trigger_topics`, `out_of_scope_topics`, `favourite_concepts`, `output_depth`, `output_format`, etc. — are the specialization context and drive personalisation throughout the skill file. Do NOT ask a fresh "what is this agent specialized in?" question here; everything you need is already in context.
+   - If the user skipped the interview in Step 12.5, fall back to the generic skill file template and note that the skill is "for general demand intelligence use".
 3. **Collect data** about the deployment:
    - `get_deployment_manifest(deployment_id)` → MCP server config
    - `get_deployment_clusters(deployment_id)` → attached clusters
@@ -643,8 +747,19 @@ Do NOT reference any orchestrator tools.
    - `list_company_documents()` → attached documents
 4. **Generate the skill file** following the guide's EXACT template structure — do not
    deviate, shorten, or skip sections. Adapt all placeholders with real data.
-5. **Save it**: `save_skill_file(deployment_id, content)` — pass raw markdown, no backtick fences
-6. **Complete provisioning**: `complete_provisioning(deployment_id)`
+   - Bake `industry`, `geographies`, and `tracked_brands` into the overview paragraph and any default examples.
+   - Use `common_questions` as the basis for the "Example Conversations" section — at least one example per question.
+   - Use `auto_trigger_topics` to write the `description:` field in the YAML frontmatter so Claude auto-routes those topics to this skill.
+   - If `out_of_scope_topics` was provided, add a "When NOT to Use" section explicitly listing them.
+   - Use `favourite_concepts` to lean on those frameworks in the workflow and tool reference (e.g. "use ESOV when comparing competitors").
+   - Use `dashboard_preference` to set the default ordering in "How to Use This Agent" (private-first vs public-first).
+   - Use `favourite_collections` as defaults the agent will check first.
+   - Use `reference_documents` to call out specific docs in the Knowledge Sources section.
+   - Use `output_depth` and `output_format` to set the default response style.
+5. **Save it**: `save_skill_file(deployment_id, content)` — pass raw markdown, no backtick fences.
+6. **Complete provisioning**: `complete_provisioning(deployment_id)`.
+
+Calendly and interview answers are already persisted via Step 12.5's step 7 — do NOT ask for either again here.
 
 ### Deployed Agent Identity
 
@@ -767,6 +882,8 @@ guidance in the skill file. Use these EXACT parameter names.
 | `remove_documents` | Remove documents from a deployment |
 | `save_skill_file` | Save generated skill file to a deployment |
 | `get_skill_file` | Download the saved skill file for a deployment (returns markdown content) |
+| `save_calendly_url` | Save the creator's Calendly booking link on a deployment |
+| `save_interview_answers` | Persist Context Interview answers on a deployment (supports partial updates) |
 | `complete_provisioning` | Mark deployment as fully provisioned |
 | `get_credit_balance` | Get user's current credit balance |
 | `get_credit_packages` | Get available credit packs and subscription plans |
