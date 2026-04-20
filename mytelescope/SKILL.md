@@ -342,6 +342,22 @@ forecast_demand(data=[{"date": "<YYYY-MM>", "volume": <number>}, ...], future_st
 - Include the forecast in your narrative (e.g. if today is April 2026, "Forecast: projected to reach ~X by October 2026").
 - Users want to know where things are heading, not just where they've been.
 
+### When to use the advanced forecasting tools
+
+`forecast_demand` is the fast default. When the user asks for a deeper / more accurate forecast, explicit seasonality, confidence intervals, or model comparison, switch to the model-specific tools. They accept the same `data` and `future_steps`, and return confidence bounds (`lower` / `upper`) alongside each forecast point.
+
+| Use case | Tool |
+|---|---|
+| Trending series, no strong seasonality | `forecast_demand_arima` |
+| Clear monthly / annual seasonality (e.g. back-to-school, holiday-driven) | `forecast_demand_sarima` |
+| Stable seasonal demand, slow-moving trend | `forecast_demand_ets` |
+| Irregular seasonality or trend changepoints (e.g. post-launch inflection) | `forecast_demand_prophet` |
+| Non-linear patterns, or when you want feature-importance explanations | `forecast_demand_xgboost` |
+| Long series (36+ months) with long-range dependencies | `forecast_demand_lstm` (slow — 30s to several minutes) |
+| Maximum robustness ("I don't know which model fits best") | `forecast_demand_ensemble` — runs all models in parallel, weights by holdout MAPE, returns the per-model MAPE breakdown |
+
+Default to `forecast_demand_ensemble` whenever the user asks for "the best" forecast or explicitly wants robustness. Call `forecast_demand_arima` / `_sarima` / `_ets` when latency matters (under 10s typical). Pass `include_lstm=true` to the ensemble only if the series is long (36+ months) and the user is willing to wait.
+
 ## Step 9: Demand Intelligence Analysis (Optional)
 
 Once you have signal hashes, run deeper analysis with these tools.
@@ -855,7 +871,14 @@ guidance in the skill file. Use these EXACT parameter names.
 | `calculate_emerging_demand` | Fastest-accelerating signals |
 | `calculate_demand_trajectory` | Year-over-year demand shifts |
 | `calculate_demand_share` | Demand distribution across groups |
-| `forecast_demand` | Forecast future demand volumes from historical data |
+| `forecast_demand` | Fast forecast (simple model) — use for the mandatory forecast in Step 8 |
+| `forecast_demand_arima` | ARIMA — trending demand, no strong seasonality |
+| `forecast_demand_sarima` | SARIMA — monthly/annual seasonal demand |
+| `forecast_demand_ets` | Holt-Winters ETS — stable seasonal demand |
+| `forecast_demand_prophet` | Prophet — trend changepoints, irregular seasonality |
+| `forecast_demand_xgboost` | XGBoost — non-linear patterns, returns top feature importances |
+| `forecast_demand_lstm` | LSTM neural network — long-range dependencies (36+ months data) |
+| `forecast_demand_ensemble` | Weighted ensemble of all models — production-grade robust forecast |
 | `search_public_signal_collections` | Search pre-built public signal collections |
 | `list_user_signal_collections` | List ALL signal collections for the user's company |
 | `search_user_signal_collections` | Search user's signal collections by topic |
