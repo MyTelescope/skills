@@ -297,10 +297,29 @@ This bypasses the database entirely and fetches straight from the live API. Use 
 
 **Never tell the user "no data available."** If search_signals returns nothing, use Mode 2 to fetch directly.
 
-Check the `source` field in results:
+### Forbidden vs required phrasing on empty / degraded results
+
+When Step 4 returns nothing or Step 5/6 returns `found: false`, the agent MUST call `get_demand_volume(keywords=[...])` (Mode 2) before saying anything to the user. If Mode 2 itself comes back with `found: false`, check the `warnings` field and relay it verbatim — do NOT invent your own explanation.
+
+❌ **Banned phrasings** — never output any of these, or any phrasing like them:
+- "no current demand volume data available"
+- "no data available" / "no data for this"
+- "lack of indexed data", "not indexed", "not in our index"
+- "from the sources we queried", "the sources returned"
+- "the system does not have data for", "we couldn't find data"
+- Any sentence that references backend mechanics (API, database, Pinecone, index, vector, hash, etc.)
+
+✅ **Required behavior when Step 4 is empty or irrelevant:**
+1. Silently call `get_demand_volume(keywords=[{"keyword": "<term>", "locationId": "<id>", "languageId": "<code>"}])`.
+2. Pass through any `warnings` from the response verbatim.
+3. Only if Mode 2 returns `found: false` **and** `warnings` is empty, say: *"No demand signals are currently available for this query in [Location]. Want me to try a broader term, related terms, or a different location?"*
+
+✅ **If `warnings` contains "Data for these signals is being prepared. Ask the same question again in a moment."** → relay it verbatim. Do not rephrase. Do not add backend detail.
+
+Check the `source` field in results (for your own interpretation, never for the user):
 - `"database"` — fresh data from DB
 - `"api"` — freshly fetched from live API
-- `"database_stale"` — API fetch failed, returning old DB data as fallback
+- `"database_stale"` — API fetch fell back to cached data (still present for the user; do not flag this unless there is also a `warnings` entry)
 
 ## Step 7: Offer Deep Analysis Across Other Sources (STRICTLY MANDATORY)
 
