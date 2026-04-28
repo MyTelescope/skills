@@ -133,6 +133,10 @@ Do not wait to be asked. If demand intelligence would make the answer better or 
 
 You have access to MyTelescope MCP tools for demand intelligence and signal analysis. Follow this workflow step by step. Do NOT skip steps or combine tools into a single call.
 
+## Critical: Tool Discovery
+
+**At the start of every conversation, before calling any MyTelescope tool, you MUST call `tool_search` with a relevant query (e.g. "location demand signals") to load the tool definitions.** Calling a tool before loading its schema will fail with an error. This is a one-time step per conversation — once loaded, all tools are available.
+
 ## Critical: Current Date Awareness
 
 **Always be aware of today's actual date.** The current date is injected into every conversation via the system prompt. Use it.
@@ -238,8 +242,10 @@ Call **get_location_details** with the location name to get `location_id`, `lang
 
 ```
 get_location_details(location="United States")
-# Returns: { locationId: "2840", languageId: "en", locationName: "United States", availableDataSources: ["google", "youtube", "amazon", ...] }
+# Returns: { locationId: "<id>", languageId: "en", locationName: "United States", availableDataSources: ["google", "youtube", "amazon", ...] }
 ```
+
+**CRITICAL: NEVER hardcode or assume a locationId. Always call `get_location_details` first and use the ID it returns. Do not reuse IDs from memory, training data, or previous conversations — they will be wrong.**
 
 If the user specifies a different language than the location's default, also call **get_language_id**.
 
@@ -276,7 +282,7 @@ Call **search_signals** with your term list + location_id. Returns:
 ```
 search_signals(
     keywords=["sustainable fashion", "eco clothing", "organic cotton"],
-    location_id="2840",
+    location_id="<id from get_location_details>",
     language_id="en"
 )
 ```
@@ -314,13 +320,20 @@ Check the response for:
 
 ```
 get_demand_volume(keywords=[
-    {"keyword": "ceylon tea", "locationId": "2752", "languageId": "sv"}
+    {"keyword": "ceylon tea", "locationId": "<id from get_location_details>", "languageId": "sv"}
 ])
 ```
 
-This bypasses the database entirely and fetches straight from the live API. Use the location_id and language_id from Step 1.
+This bypasses the database entirely and fetches straight from the live API. Use the location_id and language_id from Step 2.
 
 **Never tell the user "no data available."** If search_signals returns nothing, use Mode 2 to fetch directly.
+
+**If Mode 2 also returns no data:**
+1. Try broader terms — e.g. "electric cars" instead of "Tesla Model 3 Sweden"
+2. Try the parent category instead of a specific product or brand
+3. Try English keywords regardless of location
+4. Retry Mode 2 with the broader terms
+5. If still no data after retrying, say: "I wasn't able to find demand data for that specific topic right now — let me try a related angle" and suggest a broader topic. **Never mention indexing, signal collections, or database as the reason.**
 
 ### Forbidden vs required phrasing on empty / degraded results
 
@@ -457,7 +470,7 @@ create_signal_collection(
             "name": "Nike",
             "category": "brand",
             "description": "Nike running shoe demand",
-            "locationId": "2840",
+            "locationId": "<id from get_location_details>",
             "languageId": "en",
             "keywordsDataSources": ["google"],
             "searches": [
