@@ -63,6 +63,14 @@ an executable deliverable.
 |-------|------|-----------------|
 | `brand-tracking` | brand-tracking/SKILL.md | Live brand health dashboard, share of search, trend alerts |
 
+### Visual + brand layer — loads in parallel with every other skill
+
+This skill is not part of the sequential or tactic stacks. It's a reference that defines what MyTelescope outputs look and read like. Every skill that produces a chart, dashboard, report, or any text containing numbers MUST load it alongside its main work.
+
+| Skill | File | What it produces |
+|-------|------|-----------------|
+| `mytelescope-brand-rendering` | brand-rendering.skill.md | Typography, color palettes (base + 20-color extended), KPI card layout, Chart.js specs, data formatting rules |
+
 ---
 
 ## The Routing Logic

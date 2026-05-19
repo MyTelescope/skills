@@ -13,6 +13,7 @@ Every MyTelescope skill in a single folder. Install all of them at once and your
 
 - SKILL.md — entry point (orchestrator, routes between skills)
 - mytelescope-core.skill.md — system rules, brand voice, MCP workflow
+- brand-rendering.skill.md — visual + vocabulary rules (typography, colors, charts, formatting). Load in parallel with any skill that produces visual output, charts, or numerical text
 - strategic-brief.skill.md — write a strategic brief
 - product-thinking.skill.md — sharpen product thinking
 - pricing-distribution.skill.md — decide pricing and distribution

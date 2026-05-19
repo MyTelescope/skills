@@ -33,19 +33,20 @@ without a brief has no north star — you would not know what counts as a gap.
 
 ---
 
-## Visual and Vocabulary Rules
+## Brand & Visual Rules
 
-All visual outputs follow the MyTelescope brand spec from mytelescope-core:
+This skill defers to **`brand-rendering.skill.md`** for ALL visual + vocabulary rules — typography, color palettes, KPI card layout, chart specs, and data formatting. Load that skill in parallel whenever this one produces visual output, charts, or any text containing numbers / percentages / dates.
 
-- Fonts: Instrument Serif for headings and numbers; Inter 300/400/500 for body
-- Colors: `#00CCFF` positive, `#FF6B6B` negative, `#323F5F` neutral
-- Cards: 6px radius, 0.5px `#D6D8DF` border, no shadows, no gradients
-- Text: always `var(--color-text-primary)` — never hard-code dark text
-- Status enum: Growing / Contracting / Flat only
-- Trend enum: Accelerating / Decelerating / Stable + pp delta
-- Vocabulary: "demand signals", "consumer interest", "demand" — never "search
-  volume", "keywords", "SEO", "indexed data"
-- Volumes: 1.2k not 1200; always include sign: +12.4% not 12.4%
+Minimum required behaviour (the full spec is in brand-rendering):
+
+- Fonts: Instrument Serif for headings and numbers; Inter 300/400/500 for body. Never bold (600+).
+- Colors: `#00CCFF` positive, `#FF6B6B` negative, `#323F5F` neutral.
+- Cards: 6px radius, 0.5px `#D6D8DF` border, no shadows, no gradients.
+- Text: always `var(--color-text-primary)` — never hard-code dark text.
+- Status enum: Growing / Contracting / Flat only.
+- Trend enum: Accelerating / Decelerating / Stable + pp delta.
+- Vocabulary: "demand signals", "consumer interest", "demand" — never "search volume", "keywords", "SEO", "indexed data".
+- Volumes: `1.2k` not `1200`; always include sign: `+12.4%` not `12.4%`.
 
 ---
 
