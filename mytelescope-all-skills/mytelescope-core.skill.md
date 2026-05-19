@@ -265,11 +265,28 @@ Then ask: "Would you like me to check which of these are available for a specifi
 
 ## Step 3: Web Search for Context (Optional but Recommended)
 
-Call **web_search** to understand the topic and discover seed terms.
+Call **web_search** to understand the topic and discover seed terms. Pass the keyword as the seed AND 3-5 example queries showing how real users phrase searches around the topic. The server uses the examples as few-shot context so Perplexity, OpenAI, Grok and Gemini answer across the breadth of user intent instead of just one phrasing.
 
 ```
-web_search(query="sustainable fashion trends 2025")
+web_search(
+    query="sustainable fashion",
+    few_shot_examples=[
+        "sustainable fashion trends 2025",            # trend
+        "best sustainable clothing brands",           # brand discovery
+        "how to shop sustainably on a budget",        # how-to
+        "eco-friendly alternatives to Zara",          # comparison
+        "sustainable fashion vs fast fashion debate", # debate
+    ]
+)
 ```
+
+### Rules for `few_shot_examples`
+
+- **3-5 examples.** Fewer is too narrow; more is noise.
+- **Each example must be a real query a user might type** — not a question phrased like "what is the…" and not five paraphrases of the same keyword.
+- **Cover different intents.** Mix trend / brand / how-to / comparison / debate / pricing / news. Don't submit five trend queries.
+- **Tailor to the actual topic.** Don't reuse the sustainable-fashion examples for Swedish supermarket loyalty programmes.
+- **If you can't think of ≥3 distinct examples, omit the parameter.** `web_search(query="<keyword>")` falls back to single-prompt mode automatically.
 
 Use the results to build a list of terms for the next step. Combine user-provided terms with discovered ones.
 

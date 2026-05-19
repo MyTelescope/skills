@@ -257,16 +257,26 @@ owned content is not being picked up. Structure and authority need work.
 
 **Queries to run via MyTelescope:web_search:**
 
-Run at least 4 of these, using the brand name and top demand signals from
-Phase 1 as inputs:
+Pass the brand name as the seed query AND the audit angles as `few_shot_examples`. The server uses the examples as few-shot context so Perplexity, OpenAI, Grok and Gemini all answer across the breadth of intents in a single call — not 5 separate round-trips.
 
 ```
-web_search("[brand name] what is it")
-web_search("[brand name] pricing plans features")
-web_search("best [product category] tools")
-web_search("[brand name] vs [top competitor]")
-web_search("[brand name] cited mentioned review")
+web_search(
+    query="[brand name]",
+    few_shot_examples=[
+        "[brand name] what is it",                       # definition
+        "[brand name] pricing plans features",           # commercial findability
+        "best [product category] tools",                 # category competition
+        "[brand name] vs [top competitor]",              # head-to-head
+        "[brand name] cited mentioned review",           # citation layer
+    ]
+)
 ```
+
+**Rules for the example list (same as Step 3 in mytelescope-core):**
+
+- 3-5 examples covering different intents — definition, commercial findability, category, head-to-head, citations. Don't submit five phrasings of the same intent.
+- Substitute `[brand name]` and `[product category]` with the actual values from Phase 0 / Phase 1.
+- If you can't think of ≥3 distinct examples for this brand, fall back to `web_search(query="[brand name]")` (single-prompt mode).
 
 **What to record from each search:**
 
@@ -292,8 +302,24 @@ does not control.
 ### Step 4: Priority Queries Audit
 
 Using confirmed framing from Step 2 and top demand signals from Phase 1,
-test the 5-10 queries the brand most needs to appear in. Run each via
-`MyTelescope:web_search` and record what you actually find.
+test the 5-10 queries the brand most needs to appear in.
+
+Run ONE `web_search` call with the brand / category as the seed and the priority queries as `few_shot_examples`. The server fans the few-shot context out to all four providers (Perplexity, OpenAI, Grok, Gemini) so you get cross-provider visibility on every query in a single call:
+
+```
+web_search(
+    query="[brand name]",                              # or "[product category]" if doing a category audit
+    few_shot_examples=[
+        "What is [product category]?",                 # category definition
+        "Best [category] for [use case]",              # ranking / category competition
+        "[Brand] vs [competitor]",                     # head-to-head
+        "How to [problem your product solves]",        # task / how-to
+        "[Brand name]",                                # bare brand query
+    ]
+)
+```
+
+If the audit needs more than 5 angles, split into multiple `web_search` calls — each with its own batch of 3-5 examples grouped by theme (e.g. one call for "commercial findability" queries, another for "category authority" queries). Don't stuff 10 examples into one call.
 
 Focus on query types most likely to surface in AI answers:
 
@@ -307,7 +333,7 @@ Focus on query types most likely to surface in AI answers:
 |-------|------------------------|:------------:|-------------|:-----------------:|
 | ...   | summary of answer      | Yes / No     | Own / Third-party / None | [who] |
 
-Only populate rows from actual web_search results. Never assume or infer.
+Each row corresponds to one entry from `few_shot_examples`. Populate rows from actual web_search results — never assume or infer. The response shape is the same as today (`{perplexity, openai, grok, gemini}`); cross-reference across providers per row.
 
 ### Step 5: Content Extractability Check
 
