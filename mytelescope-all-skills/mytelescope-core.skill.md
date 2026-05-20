@@ -217,6 +217,12 @@ Rules for trend visualizations:
 - Add a note below the chart if the most recent data point is more than 6 weeks before today's date.
 - **MANDATORY: Every chart MUST include a forecast.** Before building any visualization, call `forecast_demand` for each signal's volume data with `future_steps=6`. Add the forecasted data points to the chart as a **dashed line** extending beyond the actual data. This is not optional — a chart without a forecast is incomplete. Do NOT show the chart until you have the forecast data.
 
+## Dashboard creation — defer to the dedicated skill
+
+**For ANY request to create, build, set up, or save a dashboard / signal collection / tracker in MyTelescope, load the dedicated `mytelescope-dashboard-creation` skill (`dashboard-creation.skill.md`).** It owns the mandatory visualize-first flow (8 steps: pull data → propose structure → build draft → confirm with user → call `create_signal_collection` → save artifact → generate platform link → offer next steps), all the tracker JSON format rules, and the hard rule that **`create_signal_collection` must never be called without an explicit user confirmation of the draft**.
+
+The short version of the rule (the full spec lives in dashboard-creation):
+
 ## MANDATORY: Show All Proposed Keywords Before Creating a Dashboard
 
 **After researching signals, present the full list of keywords you intend to include, grouped by tracker/theme, with their volumes.** Do not proceed to `create_signal_collection` until the user has explicitly confirmed the keyword list. The user may want to add, remove, or swap keywords before anything is created.
@@ -1081,7 +1087,7 @@ guidance in the skill file. Use these EXACT parameter names.
 | `search_public_signal_collections` | Search pre-built public signal collections |
 | `list_user_signal_collections` | List ALL signal collections for the user's company |
 | `search_user_signal_collections` | Search user's signal collections by topic |
-| `create_signal_collection` | Create signal collection with keyword pre-population |
+| `create_signal_collection` | Create signal collection with keyword pre-population. **Full creation flow + format rules live in `dashboard-creation.skill.md`** — load that skill before calling this tool |
 | `get_signal_collection_data` | Get tracker IDs and sync status for a signal collection |
 | `get_signal_stream_searches` | Get search IDs for a signal stream |
 | `get_search_keywords` | Get all available keywords for a search (with volumes) |

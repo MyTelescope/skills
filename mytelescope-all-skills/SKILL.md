@@ -71,6 +71,14 @@ This skill is not part of the sequential or tactic stacks. It's a reference that
 |-------|------|-----------------|
 | `mytelescope-brand-rendering` | brand-rendering.skill.md | Typography, color palettes (base + 20-color extended), KPI card layout, Chart.js specs, data formatting rules |
 
+### Dashboard-creation layer — loads when the user wants to save research
+
+Like brand-rendering, this is a reference skill — not sequential. Triggers whenever the user asks to create / build / save a dashboard, signal collection, or tracker. Enforces the visualize-first flow: draft dashboard → user confirms → `create_signal_collection`.
+
+| Skill | File | What it produces |
+|-------|------|-----------------|
+| `mytelescope-dashboard-creation` | dashboard-creation.skill.md | The mandatory 8-step flow for persisting demand research into the MyTelescope platform: visualize → confirm → create → save artifact → return link |
+
 ---
 
 ## The Routing Logic
