@@ -239,11 +239,12 @@ brand, where that knowledge comes from, and what is missing or wrong.
   blocked by bot detection. Always note what you could and could not read,
   and why — never assume a failed fetch means AI crawlers face the same barrier.
 
-- `MyTelescope:web_search` (Perplexity) — shows what AI systems actually
-  find and cite about the brand right now, across the live web. This is the
-  closest proxy to "what would ChatGPT or Perplexity say about this brand
-  if asked?" It surfaces third-party sources, client mentions, press coverage,
-  and review sites — the actual citation layer.
+- `MyTelescope:web_search` (queries Perplexity, OpenAI, Grok, and Gemini in
+  parallel) — shows what AI systems actually find and cite about the brand
+  right now, across the live web. This is the closest proxy to "what would
+  ChatGPT, Perplexity, or Gemini say about this brand if asked?" It surfaces
+  third-party sources, client mentions, press coverage, and review sites —
+  the actual citation layer across multiple AI providers.
 
 **Run both in parallel. Cross-reference the results.**
 
@@ -281,24 +282,21 @@ web_search(
 
 **What to record from each search:**
 
-- Which sources does Perplexity cite? (own site vs. third-party)
-- What does it say the product does? (accurate, incomplete, or wrong?)
+Look at every provider's response (`perplexity`, `openai`, `grok`, `gemini`) and aggregate:
+
+- Which sources do the AI providers cite? (own site vs. third-party — count across all four)
+- What do they say the product does? (accurate, incomplete, or wrong? Flag if the four providers disagree)
 - Is pricing findable? (if not, AI agents evaluating the tool cannot compare it)
 - Are competitors being cited where the brand is not?
-- Does Perplexity hallucinate any facts? (note these — they are reputational risks)
+- Do the providers hallucinate any facts? (note these — they are reputational risks. Hallucinations that only ONE provider makes are usually less concerning than ones repeated across all four)
 
-**Source the finding to the tool that produced it.** Never present a finding
-without stating whether it came from web_fetch, web_search, or both.
-If two tools contradict each other, report both results and flag the conflict
-— do not pick one and discard the other.
+**Source the finding to the tool that produced it.** Never present a finding without stating whether it came from `web_fetch`, `web_search`, or both. If two tools contradict each other, report both results and flag the conflict — do not pick one and discard the other.
+
+**When reporting which AI provider said what, prefer aggregate language.** Don't say "Perplexity says X" — say "all four AI providers describe the brand as X" OR "three of four providers cite the brand's blog; only Grok cites the press coverage." The user wants to see the LANDSCAPE, not one provider's view.
 
 **Citations from third parties vs. owned content:**
 
-Note which sources Perplexity cites for the brand. Research shows brands are
-6.5x more likely to be cited via third-party sources than their own domain.
-If the brand is only appearing through third-party mentions, that is worth
-flagging — it means AI visibility currently depends on sources the brand
-does not control.
+Note which sources the AI providers cite for the brand. Research shows brands are 6.5x more likely to be cited via third-party sources than their own domain. If the brand is only appearing through third-party mentions, that is worth flagging — it means AI visibility currently depends on sources the brand does not control.
 
 ### Step 4: Priority Queries Audit
 
@@ -330,9 +328,9 @@ Focus on query types most likely to surface in AI answers:
 - "How to [problem your product solves]"
 - "[Brand name]" (bare brand query)
 
-| Query | What Perplexity returns | Brand cited? | Source type | Competitor cited? |
-|-------|------------------------|:------------:|-------------|:-----------------:|
-| ...   | summary of answer      | Yes / No     | Own / Third-party / None | [who] |
+| Query | Provider consensus | Brand cited? | Source type | Competitor cited? |
+|-------|--------------------|:------------:|-------------|:-----------------:|
+| ...   | aggregated answer across the 4 providers (note where they diverge) | Yes / No (in how many of the 4?) | Own / Third-party / None | [who] |
 
 Each row corresponds to one entry from `few_shot_examples`. Populate rows from actual web_search results — never assume or infer. The response shape is the same as today (`{perplexity, openai, grok, gemini}`); cross-reference across providers per row.
 
@@ -364,7 +362,8 @@ Never mark Pass or Fail on a page you did not successfully read.
 
 Read the actual robots.txt from Step 1. Report only what is literally there.
 If robots.txt could not be fetched, mark as Unknown — do not guess its contents,
-and do not use Perplexity to infer it (Perplexity may hallucinate file contents).
+and do not use `web_search` to infer it (the AI providers may hallucinate file
+contents — robots.txt must come from the actual fetch).
 
 Bots to check — blocking any means that platform cannot cite the brand:
 
