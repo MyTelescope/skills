@@ -66,8 +66,8 @@ re-pull data you already have.
 **Entry B - New request with no prior data:**
 The user says "create a dashboard for [topic]" without prior demand research.
 Start at Step 1 (Pull Demand Data). Follow the `mytelescope-core` workflow for
-Steps 1-8 (location, web search, search_signals, get_demand_volume, other
-sources, forecast). Only after data is in hand, continue to Step 2 here.
+Steps 1-8 (location, AI Search, demand signal discovery, volume lookup,
+other sources, forecast). Only after data is in hand, continue to Step 2 here.
 
 ---
 
