@@ -1207,9 +1207,116 @@ guidance in the skill file. Use these EXACT parameter names.
 
 ---
 
+## AI Visibility Score — HTML Marker Specification
+
+When a dashboard includes an AI visibility score section, wrap it with these comment markers and add the required data attributes so the "Update AI Score" button works and score refreshes happen without changing your design.
+
+**Outer wrapper — always required:**
+```html
+<!--mt-ai-visibility-score-start-->
+<div id="mt-ai-visibility-score"
+     data-queries='["query one", "query two", "query three"]'
+     data-brand-name="BrandName">
+  <!-- your score design goes here — style it however fits this dashboard -->
+</div>
+<!--mt-ai-visibility-score-end-->
+```
+
+**Required data attributes on specific elements inside the div** (add to whichever elements carry these values — the API uses them to update only the data, leaving your design untouched):
+
+| Attribute | Put on | Purpose |
+|---|---|---|
+| `data-mt-score-number` | Every element that displays the score value — including overview cards or summary tiles on other tabs, not just the main score display | Score value gets updated in all instances document-wide |
+| `data-mt-score-bar` | The progress/fill bar element (must have `width:X%` in its `style`) | Bar width gets updated |
+| `data-mt-cited-provider="{p}" data-mt-cited-idx="{i}"` | Each per-provider citation cell | ✓/✗ gets updated; `p` = `perplexity`/`openai`/`grok`/`gemini`, `i` = 0-based query index |
+| `data-mt-score-updated` | Timestamp element | Gets updated with ISO timestamp |
+| `data-mt-score-summary` | Summary sentence element (e.g. "17 of 19 possible citations across 5 query intents and 4 AI providers") | Gets rewritten with accurate counts on each score update |
+
+Example snippet showing attribute placement (design your own surrounding HTML):
+```html
+<!-- score number, styled however you want: -->
+<span data-mt-score-number style="...">92</span>
+
+<!-- progress bar fill: -->
+<div data-mt-score-bar style="width:92%; background:#4caf50; ..."></div>
+
+<!-- one cell per provider per query, incrementing data-mt-cited-idx: -->
+<td data-mt-cited-provider="perplexity" data-mt-cited-idx="0">✓</td>
+<td data-mt-cited-provider="openai"     data-mt-cited-idx="0">✓</td>
+<td data-mt-cited-provider="grok"       data-mt-cited-idx="0">✓</td>
+<td data-mt-cited-provider="gemini"     data-mt-cited-idx="0">✗</td>
+
+<!-- citation summary sentence: -->
+<span data-mt-score-summary>17 of 20 possible citations across 5 query intents and 4 AI providers</span>
+
+<!-- timestamp: -->
+<span data-mt-score-updated>2026-05-21T07:43:54.446Z</span>
+```
+
+Rules:
+- `data-queries`: valid JSON array of the exact queries used (single-quoted attribute value)
+- `data-brand-name`: the brand name checked
+- Comment markers on their own lines, immediately before/after the outer `<div>`
+- Only ONE score block per dashboard
+- During whole-dashboard regeneration: preserve both comment markers, `data-queries`, `data-brand-name`, and all `data-mt-*` attributes exactly — regenerate the score values and visualisation using the latest provider results
+
+**In-iframe "Update AI Score" button (required in every score block):**
+
+Add this button anywhere inside the score `<div>`. It triggers a fresh score update directly from within the dashboard without any page reload:
+
+```html
+<button data-mt-update-score-btn
+        onclick="window.parent.postMessage({type:'MT_UPDATE_AI_SCORE'}, '*')"
+        style="...match your dashboard button style...">Update AI Score</button>
+```
+
+**Inline postMessage listener (required in every score block):**
+
+Add this `<script>` tag inside the `<!--mt-ai-visibility-score-start-->` block. It receives updated scores from the parent app and patches all `data-mt-*` elements in-place:
+
+```html
+<script>
+(function() {
+  window.addEventListener('message', function(event) {
+    var d = event.data;
+    if (!d) return;
+    if (d.type === 'MT_SCORE_UPDATING') {
+      var btn = document.querySelector('[data-mt-update-score-btn]');
+      if (btn) btn.disabled = d.updating;
+      return;
+    }
+    if (d.type !== 'MT_SCORE_RESULT') return;
+    var score = d.score;
+    var rows = d.rows || [];
+    var timestamp = d.timestamp;
+    document.querySelectorAll('[data-mt-score-number]').forEach(function(el) { el.textContent = score; });
+    document.querySelectorAll('[data-mt-score-bar]').forEach(function(el) { el.style.width = score + '%'; });
+    rows.forEach(function(row, idx) {
+      Object.keys(row.providers).forEach(function(provider) {
+        document.querySelectorAll('[data-mt-cited-provider="' + provider + '"][data-mt-cited-idx="' + idx + '"]').forEach(function(el) {
+          el.textContent = row.providers[provider] ? '✓' : '✗';
+        });
+      });
+    });
+    if (rows.length > 0) {
+      var totalCited = rows.reduce(function(s, r) { return s + Object.values(r.providers).filter(Boolean).length; }, 0);
+      var totalPossible = rows.reduce(function(s, r) { return s + Object.keys(r.providers).length; }, 0);
+      var providerCount = Object.keys(rows[0].providers).length;
+      var summary = totalCited + ' of ' + totalPossible + ' possible citations across ' + rows.length + ' query intents and ' + providerCount + ' AI providers';
+      document.querySelectorAll('[data-mt-score-summary]').forEach(function(el) { el.textContent = summary; });
+    }
+    if (timestamp) {
+      document.querySelectorAll('[data-mt-score-updated]').forEach(function(el) { el.textContent = timestamp; });
+    }
+  });
+})();
+</script>
+```
+
+---
+
 ## Visual Rendering — see the dedicated brand-rendering skill
 
 The full visual + rendering specification (typography, color palettes, KPI card layout, chart specs, data formatting rules) now lives in its own skill file: **`brand-rendering.skill.md`**.
 
 Load `brand-rendering` alongside this skill whenever you produce visual output. The rules in the ABSOLUTE BRAND RULES block at the top of this file are the minimum required behaviour; the full spec is in brand-rendering.
-
