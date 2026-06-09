@@ -281,12 +281,19 @@ The draft dashboard artifact MUST include:
 - **Top keywords table** per stream with volumes
 - This should look like a real analytics dashboard — NOT a bullet list of keywords
 
-After showing the artifact, tell the user:
-> "This is a draft preview. When saved to MyTelescope, the dashboard will have a
-> fixed layout with standard widgets. The purpose of saving is to track these brands
-> and topics with live-updating data. Would you like me to save this?"
+Then follow Step 10 exactly for the save and weekly signals flow.
 
-Only call `create_signal_collection` after the user confirms. Never skip the artifact.
+## Routing — Weekly Signals
+
+If the user asks specifically about weekly signals, weekly trends, or week-on-week
+data **outside of creating a new dashboard**, use the `mytelescope-weekly-signals`
+skill instead of this one. That skill handles the standalone weekly signals flow
+including minimal signal collection creation, preview fetch, widget rendering,
+and optional save.
+
+This skill handles weekly signals **only as part of dashboard creation** (Step 10).
+
+---
 
 ## Step 1: Understand the User's Intent
 
@@ -688,16 +695,20 @@ create_signal_collection(
    - Interactive elements: clickable tabs to switch between streams
    This should look like a real analytics dashboard, not a keyword list.
 
-2. **After showing the draft, ALWAYS ask the user to confirm with this message:**
-   > "This is a draft preview. When saved to MyTelescope, the dashboard will have a
-   > fixed layout with standard widgets (demand share, demand priorities, emerging demand,
-   > demand trajectory) — it won't look exactly like this preview. The purpose of saving
-   > is to track these brands and topics with live-updating data on the MyTelescope platform.
-   > Would you like me to save this dashboard to MyTelescope?"
+2. **After showing the draft, ask ONLY this — nothing else:**
+   > Would you like me to save this dashboard to MyTelescope? I can also include
+   > Weekly Signals (week-on-week trend data, auto-refreshes every 7 days) —
+   > just say **"save with weekly signals"** or **"save without"**.
 
-3. **Only call `create_signal_collection` after the user explicitly confirms.**
-   Do NOT offer download options, HTML exports, or alternative formats.
-   The only action is: save to MyTelescope or modify the draft.
+   - **"Save with weekly signals"** → use `mytelescope-weekly-signals` skill to fetch
+     preview data first, add the Weekly Index widget to the HTML artifact, then
+     call `create_signal_collection(with_weekly_tracking=False)` and save
+   - **"Save without"** → call `create_signal_collection(with_weekly_tracking=False)`
+     directly
+
+3. **Only call `create_signal_collection` after the user has confirmed.**
+   Always pass `with_weekly_tracking=False` — weekly tracking is handled by the
+   `mytelescope-weekly-signals` skill, never here.
 
 4. **After saving, ALWAYS show the dashboard link immediately.** The response from
    `create_signal_collection` includes a `link` field — use `generate_platform_link`
@@ -1177,7 +1188,7 @@ guidance in the skill file. Use these EXACT parameter names.
 - **Never say "no data available"** — if `search_signals` returns no matches, call `get_demand_volume(keywords=[...])` with the raw keywords + location/language to fetch directly from the live API.
 - **Always evaluate relevance** — low similarity scores or unrelated topics mean you should go to Step 6. When `get_demand_volume` returns suggestions (related terms), review them before presenting. Only show results that are genuinely relevant to what the user asked. If the user asked about "running shoes" and the API returns "running shoes for women", "best running shoes 2026" — those are relevant. But if it returns "shoes rack" or "shoe repair" — drop those from your presentation. Present the relevant signals grouped by theme, sorted by volume.
 - **Always suggest public collections after attaching** — after attaching a user's signal collection to an agent, search for relevant public collections and suggest them.
-- **When user asks to save a dashboard:** Show a draft visualization artifact first, then ask to confirm with the standard message about MyTelescope's fixed layout. Only call `create_signal_collection` after explicit yes. NEVER offer download/export options — the only action is save to MyTelescope or modify the draft.
+- **When user asks to save a dashboard:** Show a draft visualization artifact first, then ask "Would you like me to save this dashboard to MyTelescope?" Only call `create_signal_collection` after explicit yes. NEVER offer download/export options — the only action is save to MyTelescope or modify the draft.
 - **Always include keywords** — when creating signal collections, include keywords from your research so the dashboard shows data immediately.
 - **Always ask about clustering** — to attach signal collections to an agent, they must go through a cluster. Check for existing clusters first, then ask the user whether to create a new cluster or add to an existing one.
 - **Never reveal internal implementation** — do not mention vector search, live API, database, similarity scores, keyword hashes, Pinecone, PostgreSQL, KeywordTool API, indexed data, or any backend detail. Never say "the vector search didn't return a match", "fetching from the live API", "no indexed signals", or reference score thresholds. The user sees results, not plumbing. If data needs fetching, just say "Let me pull the demand data for [topic] in [location]."

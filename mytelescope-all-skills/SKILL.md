@@ -79,9 +79,38 @@ Like brand-rendering, this is a reference skill — not sequential. Triggers whe
 |-------|------|-----------------|
 | `mytelescope-dashboard-creation` | dashboard-creation.skill.md | The mandatory 8-step flow for persisting demand research into the MyTelescope platform: visualize → confirm → create → save artifact → return link |
 
+### Weekly signals layer — loads when the user asks for weekly trend data
+
+Triggers when the user asks specifically for weekly signals, week-on-week trends, or weekly tracking — outside of a full dashboard creation or demand intelligence workflow. Do NOT route to `mytelescope-core` for these requests.
+
+Trigger phrases: "show me weekly signals for X", "weekly trends on X", "how is X trending week on week", "weekly data on X", "track weekly demand for X".
+
+| Skill | File | What it produces |
+|-------|------|-----------------|
+| `mytelescope-weekly-signals` | weekly-signals.skill.md | Weekly Index widget (table + line graph), minimal signal collection if needed, optional save as standalone dashboard or full dashboard |
+
 ---
 
 ## The Routing Logic
+
+### Step 0: Check for direct skill triggers (before phase logic)
+
+Before determining the phase, check if the request matches a direct skill trigger.
+If it does, route immediately — do not run the phase logic.
+
+**Weekly signals trigger:**
+If the user says any of: "show me weekly signals for X", "weekly trends on X",
+"how is X trending week on week", "weekly data on X", "track weekly demand for X" —
+route immediately to `mytelescope-weekly-signals`. Do NOT run demand analysis,
+do NOT create a full dashboard, do NOT go through phases.
+
+**Dashboard creation trigger:**
+If the user says any of: "create a dashboard", "save this as a dashboard",
+"build a dashboard", "set up tracking" — route to `mytelescope-dashboard-creation`.
+
+**If neither trigger matches**, proceed to Step 1 below.
+
+---
 
 ### Step 1: Read what exists
 

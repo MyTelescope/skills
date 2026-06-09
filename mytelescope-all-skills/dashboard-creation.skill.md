@@ -167,6 +167,8 @@ Each card must show:
 - Brief sentence: "Forecast: [tracker name] projected to reach ~Xk/mo by [Month YYYY]"
 - Dashed forecast line already on the trend chart counts as the visualization
 
+**No extra charts.** Only render the elements listed above. Do not add additional charts, tables, or visualizations for data that is already represented inside the Weekly Index widget (WoW, YoY, scores, sparklines, etc.). If the data is in the widget, it does not get its own section.
+
 ### Visual spec for the artifact
 
 Follow brand-rendering exactly:
@@ -190,24 +192,35 @@ Never bold (600+)
 
 ## Step 4: Present the Draft and Ask for Confirmation
 
-After building the artifact, show it and then say - word for word:
+**MANDATORY: You MUST ask the save question in the same response as the artifact. Never show a dashboard artifact without immediately asking to save it. This is not optional.**
 
-> "This is a draft preview of your dashboard. When saved to MyTelescope, the
-> live dashboard will track these signals with automatically updating data.
-> The platform layout uses standard widgets (demand share, demand priorities,
-> emerging demand, demand trajectory) - it won't look exactly like this
-> preview. Would you like me to save this dashboard to MyTelescope?"
+After building the artifact, show it and then ask — in the same response:
 
-Do not offer download options, HTML exports, or any alternative format.
-The only two valid responses to offer are:
+> "This is a draft preview of your dashboard. Would you like me to save it to
+> MyTelescope? I can also include Weekly Signals — week-on-week trend data that
+> auto-refreshes every 7 days. Just say **'save with weekly signals'** or
+> **'save without'**."
 
-- **Yes / confirm** - proceed to Step 5
-- **Change something** - update the structure or draft and show the revised
-  artifact again before asking for confirmation again
+The only valid responses are:
 
-If the user asks to change the name, trackers, keywords, or any other detail,
-make the change, rebuild the affected parts of the artifact, and ask for
-confirmation again. Do not create in the platform with unconfirmed changes.
+- **"Save with weekly signals"** → proceed to Step 4.5
+- **"Save without"** → proceed to Step 5 directly
+- **"Change something"** → update the draft and ask again
+
+**Failure mode:** Showing a dashboard artifact without asking to save in the same response is a violation.
+
+---
+
+## Step 4.5: Fetch weekly signals before saving (only if user asked)
+
+Only enter this step if the user said "save with weekly signals".
+
+1. Get tracker IDs from the signal collection structure confirmed in Step 2
+2. Call `fetch_weekly_preview(tracker_ids)` — requires subscription
+   - If `WEEKLY_SIGNALS_REQUIRES_SUBSCRIPTION` → offer upgrade via `get_credit_packages`, then retry or skip
+3. Poll `get_weekly_signals(tracker_ids)` up to 3 times (~30s apart)
+   - `fetch_status: "complete"` + keywords → add Weekly Index widget to the HTML artifact above the main demand chart (follow spec in `brand-rendering.skill.md`), then proceed to Step 5
+   - Still fetching after 3 attempts → proceed to Step 5 without widget, note it will appear shortly on the platform
 
 ---
 
@@ -218,11 +231,14 @@ Only execute this step after the user has explicitly confirmed the draft.
 Call `create_signal_collection` with the exact structure confirmed in Step 2.
 Include keywords from the demand research so the dashboard shows data
 immediately - a collection without keywords will appear empty.
+Always pass `with_weekly_tracking=False` — weekly signals data is fetched
+separately in Step 4.5 before saving, never during collection creation.
 
 ```
 create_signal_collection(
     name="[Dashboard Name]",
     description="[Brief description of what is being tracked]",
+    with_weekly_tracking=False,
     trackers=[
         {
             "name": "[Tracker Name]",
@@ -256,8 +272,9 @@ you built in Step 3 to the deployment record.
 
 ```
 save_dashboard_artifact(
-    signal_collection_id="<id from create_signal_collection>",
-    artifact_html="<the full HTML string from Step 3>"
+    dashboard_id="<id from create_signal_collection>",
+    html_content="<the full HTML string from Step 3>",
+    generation_prompt="<one sentence describing the dashboard — e.g. 'Demand dashboard for GLP-1 brands in Germany'>"
 )
 ```
 
