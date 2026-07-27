@@ -221,6 +221,11 @@ Only enter this step if the user said "save with weekly signals".
 3. Poll `get_weekly_signals(tracker_ids)` up to 3 times (~30s apart)
    - `fetch_status: "complete"` + keywords → add Weekly Index widget to the HTML artifact above the main demand chart (follow spec in `brand-rendering.skill.md`), then proceed to Step 5
    - Still fetching after 3 attempts → proceed to Step 5 without widget, note it will appear shortly on the platform
+4. Call `enable_weekly_tracking(tracker_ids)` — do this regardless of whether
+   the poll in step 3 completed. The user already confirmed "save with weekly
+   signals" to enter this step, so this is the point to activate recurring
+   tracking; skipping it ships a dashboard that displays weekly-looking data
+   but never refreshes again.
 
 ---
 
@@ -363,6 +368,9 @@ message. The user sees a dashboard being created - not a data pipeline.
 | `search_signals` | 1 | Find matching demand signals in the database |
 | `get_demand_volume` | 1 | Pull monthly volume time-series for signals |
 | `forecast_demand` | 1 | 6-month demand forecast for the trend chart |
+| `fetch_weekly_preview` | 4.5 | One-time weekly data fetch, only if user asked for weekly signals |
+| `get_weekly_signals` | 4.5 | Poll for the weekly preview fetch to complete |
+| `enable_weekly_tracking` | 4.5 | Activate recurring weekly refresh - required before saving with weekly signals |
 | `create_signal_collection` | 5 | Create the dashboard - only after user confirms draft |
 | `save_dashboard_artifact` | 6 | Attach the HTML artifact to the signal collection |
 | `generate_platform_link` | 7 | Generate authenticated link to the live dashboard |
