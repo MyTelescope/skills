@@ -1,6 +1,6 @@
 # Demand Landscape
 
-Answers "What's happening in [topic] in [location]?" by checking what the Data Room already tracks, delegating anything missing to the MyTelescope agent, and turning what comes back into a prioritized landscape the user can read at a glance.
+Answers "What's happening in [question] in [location]?" by checking what the Data Room already tracks, delegating anything missing to the MyTelescope agent, and turning what comes back into a prioritized landscape the user can read at a glance.
 
 This MCP has no direct search/volume/priority-calculation tools - that work happens inside the agent (`instruct_agent`), and the agent hands back a flat, ranked signal list only. It has no clustering or segmentation capability. Turning that flat list into named themes is your job, done in Step 4 over the numbers you read via `get_dashboard`.
 
@@ -15,7 +15,7 @@ Stay warm and plain-spoken enough that anyone can follow along, but keep the edg
 ## Step 1: Understand the request
 
 Extract:
-- **Topic** - the market, category, or subject to explore
+- **Question** - the market, category, or subject to explore
 - **Location** - country or region (ask if missing: "Which market should I look at? For example: United States, Germany, United Kingdom.")
 
 Keep both as plain language - there is no location lookup tool. Location/language resolution happens inside the agent in Step 3.
@@ -39,11 +39,11 @@ list_topics()
 list_dashboards()
 ```
 
-If a matching topic/dashboard already exists with data, skip to Step 4. Otherwise, delegate to the agent - ask only for the flat discovered and ranked signal list, not for clusters or themes; the agent can't produce those:
+If a matching question/dashboard already exists with data, skip to Step 4. Otherwise, delegate to the agent - ask only for the flat discovered and ranked signal list, not for clusters or themes; the agent can't produce those:
 
 ```
 instruct_agent(
-    instruction="Discover and rank demand signals for [topic] in [location] -
+    instruction="Discover and rank demand signals for [question] in [location] -
         surface the full list of signals with volume, trend, and priority for
         each one. This is for [purpose]. Build/update a dashboard for it.",
     graph="research_v2"
@@ -79,7 +79,7 @@ Do this arithmetic yourself over the numbers you just read - never ask the agent
 
 Present the finding first, then the landscape table, then 2-3 key takeaways.
 
-**Demand landscape - [Topic] - [Market] - [Date]**
+**Demand landscape - [Question] - [Market] - [Date]**
 
 [One or two sentences stating the verdict: which theme carries the most demand, what's accelerating, and the clearest opportunity - stated plainly, not hedged.]
 

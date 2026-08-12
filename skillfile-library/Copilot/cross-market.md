@@ -13,7 +13,7 @@ Say "demand signals" and "consumer interest," never "keywords," "search volume,"
 ## Step 1: Understand the request
 
 Extract:
-- **Topic or signals** - what to compare across markets
+- **Question or signals** - what to compare across markets
 - **Markets** - the countries or regions to compare (ask if fewer than 2 specified: "Which markets should I compare? For example: France, Germany, United Kingdom.")
 
 Aim for 2-6 markets. If the user lists more than 6, ask which 4-6 matter most.
@@ -32,7 +32,7 @@ For the first market, let the agent create the anchor dashboard:
 
 ```
 instruct_agent(
-    instruction="Find demand for [topic] (or: for these specific signals:
+    instruction="Find demand for [question] (or: for these specific signals:
         [signal list]) in [market 1]. Give me total demand, 12-month trend,
         and YoY change for each signal. Build a dashboard for it.",
     graph="research_v2"
@@ -81,7 +81,7 @@ With every market's numbers recorded:
 
 Present the cross-market comparison table you stitched together, followed by 2-3 key findings.
 
-**Cross-Market Comparison - [Topic] - [Date]**
+**Cross-Market Comparison - [Question] - [Date]**
 
 | Signal | [Market 1] | [Market 2] | [Market 3] | Leader |
 |--------|-----------|-----------|-----------|--------|

@@ -108,7 +108,7 @@ list_entities()
 list_dashboards()
 ```
 
-If a matching topic exists, get its detail (entities double as clusters,
+If a matching question exists, get its detail (entities double as clusters,
 each with a volume-ranked signal profile):
 
 ```
@@ -330,7 +330,7 @@ never "keywords", "search volume", "SEO", "queries".
 |------|------|---------|
 | `web_search` | 2 | Find competitor positioning and messaging |
 | `web_fetch` | 2 | Read competitor content in full |
-| `list_topics` | 3 | Check for an existing topic; read its entities/clusters |
+| `list_topics` | 3 | Check for an existing question; read its entities/clusters |
 | `list_entities` | 3 | Check for existing entities tracked for the category |
 | `list_dashboards` | 3 | Check for / locate an existing dashboard |
 | `instruct_agent` | 3 | Delegate discovery and ranking of demand signals to the agent |

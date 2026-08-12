@@ -36,7 +36,7 @@ Each call returns ranked chunks (`content`, `filename`, `score`). Extract: state
 
 ## Step 3: Pull demand signals for the category
 
-Check first: `list_topics()` / `list_entities()` / `list_dashboards()`. If a matching topic/dashboard already exists with category coverage, skip ahead to read it. Otherwise this MCP has no direct search or volume tools - delegate to the agent, and ask for the flat signal list only, not a pre-built theme or insight:
+Check first: `list_topics()` / `list_entities()` / `list_dashboards()`. If a matching question/dashboard already exists with category coverage, skip ahead to read it. Otherwise this MCP has no direct search or volume tools - delegate to the agent, and ask for the flat signal list only, not a pre-built theme or insight:
 
 ```
 instruct_agent(

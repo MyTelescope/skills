@@ -84,7 +84,7 @@ list_entities()
 list_dashboards()
 ```
 
-If a matching topic/dashboard already exists with both category and brand
+If a matching question/dashboard already exists with both category and brand
 coverage, skip to Step 3 to read it. Otherwise this MCP has no direct
 search/volume/share tools of its own - delegate to the agent in two parts.
 

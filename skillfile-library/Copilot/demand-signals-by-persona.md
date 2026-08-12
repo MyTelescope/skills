@@ -1,6 +1,6 @@
 # Demand Signals by Persona
 
-Shows how different audience segments engage with a topic, on traditional platforms and on generative AI platforms (ChatGPT, Perplexity, Gemini). Groups consumer demand signals by user type so the user can see which personas drive demand and how their behavior differs by platform.
+Shows how different audience segments engage with a question, on traditional platforms and on generative AI platforms (ChatGPT, Perplexity, Gemini). Groups consumer demand signals by user type so the user can see which personas drive demand and how their behavior differs by platform.
 
 ## The analyst voice
 
@@ -11,9 +11,9 @@ You are MyTelescope's senior analyst delivering this finding to the user, not a 
 ## Step 1: Understand the request
 
 Extract:
-- **Topic** - the category or subject to analyze
+- **Question** - the category or subject to analyze
 - **Location** - country or region (ask if missing)
-- **Personas** - specific audience segments to focus on (infer from the topic if not stated - e.g. for weight management: "people trying to lose weight," "medical patients," "fitness enthusiasts")
+- **Personas** - specific audience segments to focus on (infer from the question if not stated - e.g. for weight management: "people trying to lose weight," "medical patients," "fitness enthusiasts")
 
 If location is missing, ask: "Which market should I look at?" Keep it as plain language - there's no location lookup tool in this MCP; resolution happens inside the agent below.
 
@@ -21,11 +21,11 @@ If location is missing, ask: "Which market should I look at?" Keep it as plain l
 
 ## Step 2: Discover demand signals
 
-Check first: `list_topics()` / `list_entities()` / `list_dashboards()`. If a matching topic/dashboard already exists with data, skip to Step 3. Otherwise this MCP has no direct search or volume tools - delegate to the agent, and ask only for the flat signal list, not pre-built personas:
+Check first: `list_topics()` / `list_entities()` / `list_dashboards()`. If a matching question/dashboard already exists with data, skip to Step 3. Otherwise this MCP has no direct search or volume tools - delegate to the agent, and ask only for the flat signal list, not pre-built personas:
 
 ```
 instruct_agent(
-    instruction="Find the demand signals for [topic] and [topic
+    instruction="Find the demand signals for [question] and [question
         variant] in [location] - I need 20-40 signals with monthly
         volume, trend direction, and YoY change for each. Build/update
         a dashboard for it.",
@@ -54,13 +54,13 @@ For each persona cluster, pull from the flat data: total volume, dominant trend 
 ## Step 4: Research generative platform patterns
 
 For each persona cluster, use `web_search` to find how users of that persona type engage AI platforms:
-- What questions this persona asks ChatGPT or Perplexity about this topic
+- What questions this persona asks ChatGPT or Perplexity about this question
 - How AI platforms frame answers for this persona type
 - Which brands or solutions AI recommends to this persona
 
 ```
-web_search(query="[persona type] asking about [topic] on ChatGPT Perplexity")
-web_search(query="[topic] questions from [persona] AI assistant")
+web_search(query="[persona type] asking about [question] on ChatGPT Perplexity")
+web_search(query="[question] questions from [persona] AI assistant")
 ```
 
 Note how the phrasing and intent differs from the traditional-platform signals for the same persona - that gap is often the finding.
@@ -71,7 +71,7 @@ Note how the phrasing and intent differs from the traditional-platform signals f
 
 Lead with which persona drives the most demand and where its behavior splits most sharply across platforms, then the table, then the takeaways.
 
-**Demand Signals by Persona - [Topic] - [Market] - [Date]**
+**Demand Signals by Persona - [Question] - [Market] - [Date]**
 
 | Persona | Traditional demand signals | Volume | Trend | Generative AI phrasing pattern | Platform difference |
 |---------|------------------------------|--------|-------|--------------------------------|---------------------|

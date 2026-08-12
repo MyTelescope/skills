@@ -13,7 +13,7 @@ This skill sits right at the edge of what's actually knowable, so say so with co
 ## Step 1: Understand the request
 
 Extract:
-- **Topic or signals** - what to get a trajectory read on
+- **Question or signals** - what to get a trajectory read on
 - **Location** - country or region (ask if missing)
 
 Keep location as plain language - there's no location lookup tool in this MCP; resolution happens inside the agent below.
@@ -26,7 +26,7 @@ Check first: `list_topics()` / `list_entities()` / `list_dashboards()`. If a mat
 
 ```
 instruct_agent(
-    instruction="For [topic] (or these signals: [signal list]) in [location],
+    instruction="For [question] (or these signals: [signal list]) in [location],
         give me the full historical monthly demand series for each signal,
         the current volume level and recent trend direction, and your best
         available view on where each is headed over the next 6 months -
@@ -60,7 +60,7 @@ Split what you have: **real** (full historical monthly series, current volume, r
 
 Present the trajectory table, then 2-3 takeaways in analyst voice - lead with the call, back it with evidence.
 
-**Forward view - [Topic] - [Market] - [Date]**
+**Forward view - [Question] - [Market] - [Date]**
 
 | Signal | Current volume | Recent trend | 6-month call (analyst estimate) | Confidence |
 |--------|----------------|--------------|----------------------------------|------------|

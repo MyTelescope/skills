@@ -32,7 +32,7 @@ tool for any of these; resolution happens downstream.
 
 ## Step 2: Check what's already tracked
 
-Check existing topics, entities, and dashboards for a match on this brand,
+Check existing questions, entities, and dashboards for a match on this brand,
 competitor set, and category. If one already covers it, skip to Step 4.
 Otherwise continue.
 

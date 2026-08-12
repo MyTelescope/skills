@@ -107,7 +107,7 @@ list_topics()
 list_dashboards()
 ```
 
-If a matching topic/dashboard already exists with data, skip to reading it
+If a matching question/dashboard already exists with data, skip to reading it
 below. Otherwise, delegate discovery and measurement to the agent - this MCP
 has no direct search/volume tools of its own:
 
@@ -303,7 +303,7 @@ use a hyphen or rewrite the sentence.
 |------|------|---------|
 | `web_search` | 2 | Find competitor messaging and active campaigns |
 | `web_fetch` | 2 | Read competitor content in full |
-| `list_topics` / `list_dashboards` | 3 | Check for an existing topic/dashboard before doing fresh work |
+| `list_topics` / `list_dashboards` | 3 | Check for an existing question/dashboard before doing fresh work |
 | `instruct_agent` | 3 | Delegate demand discovery and measurement to the agent |
 | `continue_workflow` | 3 | Answer a clarifying question or steer the same thread |
 | `get_workflow_state` | 3 | Poll for the run's result |

@@ -25,7 +25,7 @@ Keep the location as plain language - there's no location lookup tool in this MC
 
 ## Step 2: Get the brand's overall share, then the underlying signals
 
-Check first: `list_topics()` / `list_entities()` / `list_dashboards()`. If a matching topic/dashboard with both category and brand coverage already exists, skip to Step 3. Otherwise this MCP has no direct search/volume/share tools - delegate to the agent in two parts.
+Check first: `list_topics()` / `list_entities()` / `list_dashboards()`. If a matching question/dashboard with both category and brand coverage already exists, skip to Step 3. Otherwise this MCP has no direct search/volume/share tools - delegate to the agent in two parts.
 
 First, the headline number. This is a single named entity measured against its category aggregate - exactly the benchmark_comparison mode research_v2 supports, so ask for it explicitly:
 

@@ -110,7 +110,7 @@ list_entities()
 list_dashboards()
 ```
 
-If a matching topic/dashboard already exists with category coverage, skip
+If a matching question/dashboard already exists with category coverage, skip
 ahead to read it. Otherwise, delegate to the agent - this MCP has no direct
 search or volume tools of its own, and the request should ask for the flat
 signal list only, not a pre-built theme or insight:

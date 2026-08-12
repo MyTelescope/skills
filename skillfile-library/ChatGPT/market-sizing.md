@@ -20,7 +20,7 @@ Keep the location as plain language - there's no location lookup tool in this MC
 
 ## Step 2: Cast wide across the category
 
-Check first: `list_topics()` / `list_entities()` / `list_dashboards()`. If a matching topic/dashboard already exists with broad category coverage, skip to Step 3. Otherwise this MCP has no direct discovery tool of its own - delegate to the agent, stating explicitly that this needs breadth, and ask for the flat signal list only. The agent cannot group signals into named segments; that's your job in Step 3:
+Check first: `list_topics()` / `list_entities()` / `list_dashboards()`. If a matching question/dashboard already exists with broad category coverage, skip to Step 3. Otherwise this MCP has no direct discovery tool of its own - delegate to the agent, stating explicitly that this needs breadth, and ask for the flat signal list only. The agent cannot group signals into named segments; that's your job in Step 3:
 
 ```
 instruct_agent(

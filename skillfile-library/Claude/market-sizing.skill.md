@@ -76,7 +76,7 @@ list_entities()
 list_dashboards()
 ```
 
-If a matching topic/dashboard already exists with broad category coverage,
+If a matching question/dashboard already exists with broad category coverage,
 skip to Step 3 to read it. Otherwise, delegate to the agent. This MCP has
 no direct discovery tool of its own, so say that explicitly - and ask for
 the flat signal list only. The agent cannot pre-group signals into named

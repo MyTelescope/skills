@@ -4,8 +4,8 @@ description: >
   Use this skill when the user asks where demand is heading or wants to see
   a forecast. Trigger for: "Where is this heading?", "What will demand look
   like in 6 months?", "Will this grow or decline?", "Show me the trajectory
-  for [topic]", "Project demand for [category] forward", "What's the outlook
-  for [topic] in [market]?", or any request for a forward-looking view of
+  for [question]", "Project demand for [category] forward", "What's the outlook
+  for [question] in [market]?", or any request for a forward-looking view of
   demand trajectory with a forecast horizon.
 ---
 
@@ -54,7 +54,7 @@ on. A senior analyst says "I'd call this one growing, and I'd bet on it" or
 ## Step 1: Understand the request
 
 Extract from the user's message:
-- **Topic or signals** - what they want a trajectory read on
+- **Question or signals** - what they want a trajectory read on
 - **Location** - country or region (ask if missing)
 
 If location is missing, ask:
@@ -75,14 +75,14 @@ list_entities()
 list_dashboards()
 ```
 
-If a matching topic/dashboard already exists with a recent read, skip to
+If a matching question/dashboard already exists with a recent read, skip to
 Step 3. Otherwise delegate to the agent in one call - this MCP has no
 volume or forecasting tools of its own, and there is no forecasting engine
 to call even indirectly:
 
 ```
 instruct_agent(
-    instruction="For [topic] (or these signals: [signal list]) in [location],
+    instruction="For [question] (or these signals: [signal list]) in [location],
         give me the full historical monthly demand series for each signal,
         the current volume level and recent trend direction, and your best
         available view on where each is headed over the next 6 months -

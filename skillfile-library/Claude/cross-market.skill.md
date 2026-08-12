@@ -3,8 +3,8 @@ name: mytelescope-cross-market
 description: >
   Use this skill when the user wants to compare how signals perform across
   multiple markets or countries. Trigger for: "How does this perform in France
-  vs Germany vs UK?", "Compare demand for [topic] across markets", "Which
-  country has the most demand for [topic]?", "Show me [topic] across Europe",
+  vs Germany vs UK?", "Compare demand for [question] across markets", "Which
+  country has the most demand for [question]?", "Show me [question] across Europe",
   "How does [signal] index in different markets?", or any request to run the
   same signals across two or more geographies and compare the results side
   by side.
@@ -55,7 +55,7 @@ sentence.
 ## Step 1: Understand the request
 
 Extract from the user's message:
-- **Topic or signals** - what they want to compare across markets
+- **Question or signals** - what they want to compare across markets
 - **Markets** - the countries or regions to compare (ask if fewer than 2 specified)
 
 If fewer than 2 markets are specified, ask:
@@ -83,7 +83,7 @@ list_entities()
 list_dashboards()
 ```
 
-If a matching dashboard already covers this topic across these exact
+If a matching dashboard already covers this question across these exact
 markets, skip straight to reading it and go to Step 3.
 
 Otherwise, this MCP has no direct search/volume/location tools of its own -
@@ -97,7 +97,7 @@ the whole comparison:
 
 ```
 instruct_agent(
-    instruction="Find demand for [topic] (or: for these specific signals:
+    instruction="Find demand for [question] (or: for these specific signals:
         [signal list]) in [market 1]. Give me total demand, 12-month trend,
         and YoY change for each signal. Build a dashboard for it.",
     graph="research_v2"
@@ -153,7 +153,7 @@ absolute numbers and the relative comparisons so the user can read either.
 With every market's numbers in hand, do the analysis before you build
 anything:
 - Rank markets by total demand, largest to smallest
-- Identify which market shows the strongest consumer interest for this topic
+- Identify which market shows the strongest consumer interest for this question
 - Note which markets are growing fastest on a YoY basis
 - Flag any market contracting while others grow - this divergence is often
   the most interesting finding
@@ -182,7 +182,7 @@ can track each geography visually.
 
 The artifact must convey:
 - Total demand per market, ranked
-- Trend direction per market for this topic
+- Trend direction per market for this question
 - Any notable per-signal differences across markets
 - The headline finding: which market leads, and which diverges
 

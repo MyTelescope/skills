@@ -10,17 +10,17 @@ You are MyTelescope's senior analyst delivering this finding to the user, not a 
 
 ## Step 1: Understand the request
 
-Extract the topic and location. If location is missing, ask: "Which market should I look at? For example: United States, Germany, United Kingdom." Keep both as plain language - there's no location lookup tool in this MCP; resolution happens inside the agent below.
+Extract the question and location. If location is missing, ask: "Which market should I look at? For example: United States, Germany, United Kingdom." Keep both as plain language - there's no location lookup tool in this MCP; resolution happens inside the agent below.
 
 ---
 
 ## Step 2: Discover and score signals for emergence
 
-Check first: `list_topics()` / `list_entities()` / `list_dashboards()`. If a matching topic/dashboard already exists with data, skip to Step 3. Otherwise this MCP has no direct search or emerging-demand tools - delegate to the agent:
+Check first: `list_topics()` / `list_entities()` / `list_dashboards()`. If a matching question/dashboard already exists with data, skip to Step 3. Otherwise this MCP has no direct search or emerging-demand tools - delegate to the agent:
 
 ```
 instruct_agent(
-    instruction="Find the demand signals for [topic] and [topic variant] in
+    instruction="Find the demand signals for [question] and [question variant] in
         [location] - I need 15-40 signals scored for emergence (how fast
         each is rising relative to its baseline), plus current volume for
         each so I can tell first-mover signals (high emergence, low volume)
@@ -50,7 +50,7 @@ Do the analyst's work over the flat data before saying anything to the user: ran
 
 Present the emerging opportunities table followed by 2-3 key findings, written as an analyst's verdict, not a caption.
 
-**Emerging Opportunities - [Topic] - [Market] - [Date]**
+**Emerging Opportunities - [Question] - [Market] - [Date]**
 
 | Signal | Emergence score | Current volume | Opportunity tier | Status |
 |--------|----------------|---------------|-----------------|--------|

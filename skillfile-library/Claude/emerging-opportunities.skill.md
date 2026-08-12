@@ -4,7 +4,7 @@ description: >
   Use this skill when the user asks what is growing, rising, or emerging in a
   space. Trigger for: "What's growing fast in [space]?", "What's emerging in
   [category]?", "Show me rising signals in [market]", "What are the
-  first-mover opportunities in [topic]?", "What's taking off in [location]?",
+  first-mover opportunities in [question]?", "What's taking off in [location]?",
   or any request focused on fast-rising demand and early opportunities.
 ---
 
@@ -53,7 +53,7 @@ log of what got fetched.
 
 ## Step 1: Understand the request
 
-Extract the topic and location. If location is missing, ask:
+Extract the question and location. If location is missing, ask:
 > "Which market should I look at? For example: United States, Germany, United Kingdom."
 
 Keep both as plain language - there is no location lookup tool in this MCP.
@@ -71,13 +71,13 @@ list_entities()
 list_dashboards()
 ```
 
-If a matching topic/dashboard already exists with data, skip to Step 3 to
+If a matching question/dashboard already exists with data, skip to Step 3 to
 read it. Otherwise, delegate to the agent - this MCP has no direct search or
 emerging-demand tools of its own:
 
 ```
 instruct_agent(
-    instruction="Find the demand signals for [topic] and [topic variant] in
+    instruction="Find the demand signals for [question] and [question variant] in
         [location] - I need 15-40 signals scored for emergence (how fast
         each is rising relative to its baseline), plus current volume for
         each so I can tell first-mover signals (high emergence, low volume)
@@ -124,7 +124,7 @@ talk to the user.
 ## Step 4: Build the emerging opportunities dashboard
 
 Before building, say:
-> "Here's a first look at what's rising fastest in [topic] - and where the real first-mover windows are."
+> "Here's a first look at what's rising fastest in [question] - and where the real first-mover windows are."
 
 **This is the primary output. Build the HTML artifact immediately. Do not write a text summary before or instead of the artifact.**
 

@@ -37,7 +37,7 @@ For each competitor, extract: the core campaign message or tagline, the channel 
 
 ## Step 3: Discover demand signals and validate timing
 
-Check first: `list_topics()` / `list_dashboards()`. If a matching topic/dashboard already exists with data, skip to reading it below. Otherwise this MCP has no direct search/volume tools - delegate to the agent:
+Check first: `list_topics()` / `list_dashboards()`. If a matching question/dashboard already exists with data, skip to reading it below. Otherwise this MCP has no direct search/volume tools - delegate to the agent:
 
 ```
 instruct_agent(

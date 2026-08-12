@@ -45,7 +45,7 @@ list_entities()
 list_dashboards()
 ```
 
-If a matching topic or dashboard already exists with fresh data, skip straight to reading it below. Otherwise, delegate discovery to the agent:
+If a matching question or dashboard already exists with fresh data, skip straight to reading it below. Otherwise, delegate discovery to the agent:
 
 ```
 instruct_agent(

@@ -78,7 +78,7 @@ list_entities()
 list_dashboards()
 ```
 
-If a matching topic/dashboard already covers this brand and its competitors,
+If a matching question/dashboard already covers this brand and its competitors,
 skip to Step 3 to read it. Otherwise, delegate to the agent - this MCP has no
 direct search/volume tools of its own, and demand must come back on one
 comparable scale, not from separate per-entity calls.

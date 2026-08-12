@@ -1,11 +1,11 @@
 ---
 name: mytelescope-demand-landscape
 description: >
-  Use this skill when the user asks what is happening in a topic, category, or
-  market in a specific location. Trigger for: "What's happening in [topic] in
+  Use this skill when the user asks what is happening in a question, category, or
+  market in a specific location. Trigger for: "What's happening in [question] in
   [location]?", "Give me an overview of [category] in [market]", "What does
-  demand look like for [topic]?", "Show me the [topic] landscape in [country]",
-  "What are people searching for around [topic]?", or any request for a broad
+  demand look like for [question]?", "Show me the [question] landscape in [country]",
+  "What are people searching for around [question]?", or any request for a broad
   demand overview of a space. This skill discovers what signals exist, how big
   each one is, and what matters most - then renders a prioritized landscape
   visualization ready to save as a dashboard.
@@ -15,7 +15,7 @@ description: >
 
 ## What this skill does
 
-Answers "What's happening in [topic] in [location]?" by checking what the
+Answers "What's happening in [question] in [location]?" by checking what the
 Data Room already tracks, delegating anything missing to the MyTelescope
 agent, and rendering a prioritized landscape visualization the user can read
 and optionally save onto a Data Room dashboard.
@@ -24,7 +24,7 @@ The tools that drive this skill:
 - `list_topics` / `list_entities` / `list_dashboards` - check what's already
   tracked before doing new work
 - `instruct_agent` (graph `research_v2`) + `get_workflow_state` - discovers
-  demand signals for the topic and measures their volume, trend, and
+  demand signals for the question and measures their volume, trend, and
   priority, returning a flat ranked list. This MCP has no direct
   search/volume/priority-calculation tools of its own, and the agent has no
   clustering or segmentation capability either - it hands back signals, not
@@ -57,7 +57,7 @@ the user gets your conclusions, not your method.
 ## Step 1: Understand the request
 
 Extract from the user's message:
-- **Topic** - the market, category, or subject they want to explore
+- **Question** - the market, category, or subject they want to explore
 - **Location** - country or region (ask if missing)
 
 If location is missing, ask before proceeding:
@@ -95,11 +95,11 @@ Before asking the agent to do fresh work, check whether this space is
 already in the Data Room:
 
 ```
-list_topics()                                   # any topic matching the space?
+list_topics()                                   # any question matching the space?
 list_dashboards()                               # any dashboard already built for it?
 ```
 
-If a matching topic exists, get its detail (entities can double as a
+If a matching question exists, get its detail (entities can double as a
 ready-made grouping, each carrying a volume-ranked demand profile):
 
 ```
@@ -121,7 +121,7 @@ for nothing new.
 ## Step 4: Delegate discovery and measurement
 
 Call `instruct_agent` with `graph="research_v2"` and a single, focused
-instruction covering the topic, location, and the purpose from Step 2. Ask
+instruction covering the question, location, and the purpose from Step 2. Ask
 only for the flat discovered and ranked signal set - volume, trend, and
 priority per signal - and for a dashboard built or updated around it. Do not
 ask the agent to find clusters, themes, or segments; that isn't something it
@@ -129,7 +129,7 @@ can do, and asking for it just wastes a turn.
 
 ```
 instruct_agent(
-    instruction="Discover and rank demand signals for [topic] in [location] -
+    instruction="Discover and rank demand signals for [question] in [location] -
         surface the full list of signals with volume, trend, and priority for
         each one. This is for [purpose from Step 2]. Build/update a dashboard
         for it.",
@@ -333,7 +333,7 @@ landscape and the verdict, not the method.
 
 | Tool | Step | Purpose |
 |------|------|---------|
-| `list_topics` | 3, 5 | Check for an existing topic; read its entities/clusters |
+| `list_topics` | 3, 5 | Check for an existing question; read its entities/clusters |
 | `list_dashboards` | 3, 5 | Check for / locate an existing dashboard |
 | `instruct_agent` | 4 | Delegate discovery and measurement - flat signal list only |
 | `continue_workflow` | 4 | Answer a clarifying question or steer the same thread |
