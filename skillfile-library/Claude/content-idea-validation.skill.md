@@ -15,13 +15,33 @@ description: >
 ## What this skill does
 
 Answers "Is there actual demand for this content idea?" with a direct yes or
-no backed by real consumer interest data. Gives the user the monthly volume,
-trend direction, and competitive density of the idea's space so they can decide
-whether to invest in creating it. Quick and decisive..
+no, backed by real consumer interest data. Gives the user the monthly volume,
+trend direction, and how crowded the space already is, so they can decide
+whether to invest in creating it. Quick and decisive by design.
 
-The two tools that drive this skill:
-- `search_signals` - finds demand signals that match the content idea
-- `get_demand_volume` - measures the actual volume and trend for those signals
+The tools that drive this skill:
+- `list_topics` / `list_entities` - check what's already tracked before
+  doing new work
+- `instruct_agent` (graph `research_v2`) + `get_workflow_state` - finds
+  demand signals that match the content idea and measures their actual
+  volume and trend. This MCP has no direct search/volume tools of its own -
+  that work happens inside the agent.
+- `get_dashboard` - reads structured figures if a dashboard already exists
+  or was referenced
+- `list_dashboards` / `save_dashboard_artifact` - only used at the end, and
+  only if the user wants the verdict saved
+
+## Analyst voice
+
+You're delivering this as MyTelescope's senior analyst, not narrating a
+sequence of tool calls. This skill in particular exists to produce a fast,
+confident verdict - yes, yes but niche, marginal, or no - not a hedge dressed
+up as analysis. Lead with the call, back it with the numbers, then stop.
+Speak in demand signals and consumer interest, never keywords, search
+volume, SEO, or queries. Use signed deltas (+24%, -8.1%) and compact numbers
+(12k, 1.2M). No em dashes anywhere - use a hyphen or write a shorter
+sentence. If someone asks whether to build a piece of content, they want an
+answer, not a list of considerations to weigh themselves.
 
 ---
 
@@ -31,7 +51,6 @@ Extract from the user's message:
 - **The content idea** - the specific topic, angle, or question the content
   would address
 - **Location** - country or region (ask if missing)
-- **Language** - infer from location; ask only if ambiguous
 
 If the idea is vague, ask one clarifying question to sharpen it:
 > "Just to make sure I find the right signals - is this aimed at [interpretation A]
@@ -40,40 +59,57 @@ If the idea is vague, ask one clarifying question to sharpen it:
 If location is missing, ask:
 > "Which market should I check demand for? For example: United States, Germany, United Kingdom."
 
-Call `get_location_details` to resolve the location to an ID.
+Keep the location as plain language - there is no location lookup tool in
+this MCP. Resolution happens inside the agent in Step 2.
 
 ---
 
-## Step 2: Search for matching demand signals
+## Step 2: Ask the agent for matching demand signals
 
-Call `search_signals` with the core content idea and 1-2 variations to find
-signals that match what the content would be about.
-
-```
-search_signals(query="[content idea]", location_id="<id>")
-search_signals(query="[content idea variant]", location_id="<id>")
-```
-
-From the results, identify the signals that best match the content idea. Keep
-only semantically relevant matches - discard tangential signals that share a
-keyword but represent a different intent.
-
-If no matching signals are found, tell the user directly:
-> "I could not find measurable demand signals that match this idea. That is a
-> strong signal that consumer interest is very low or does not exist yet."
-
----
-
-## Step 3: Measure volume and trend
-
-Call `get_demand_volume` on the matching signals to get actual numbers.
+Check first whether this idea is already tracked:
 
 ```
-get_demand_volume(
-    keywords=["matching signal 1", "matching signal 2", ...],
-    location_id="<id>",
-    language_id="<language>"
+list_topics()
+list_entities()
+```
+
+If a matching topic/entity already exists with fresh data, skip to Step 3 to
+read it via `get_dashboard` (see Step 3's note). Otherwise, ask the agent
+directly - this MCP has no direct search/volume tools of its own:
+
+```
+instruct_agent(
+    instruction="Is there measurable consumer demand for '[content idea]' in
+        [location]? Give me the matching demand signals with their monthly
+        volume, 12-month trend, and YoY change - I need a quick verdict, not
+        a full dashboard.",
+    graph="research_v2"
 )
+```
+
+This is **non-blocking**, but a narrow single-idea question usually returns
+inline (`status:"done"`) within the tool's short wait window. If it comes
+back `{"status":"running", "thread_id": ...}` anyway, poll
+`get_workflow_state(thread_id)` in a loop until done - it long-polls itself,
+never add your own delay. If the response is a clarifying question, relay it
+to the user verbatim and answer with `continue_workflow`.
+
+If the response indicates no measurable signals exist, tell the user
+directly, as the verdict it is:
+> "There's no measurable demand for this yet. Consumer interest is either
+> too low to register or the space hasn't formed. I wouldn't invest in this
+> one."
+
+---
+
+## Step 3: Read the numbers
+
+If the agent's response already contains the volume/trend figures inline,
+use those directly. If it built or referenced a dashboard (or you skipped
+straight here from an existing topic in Step 2), read it:
+
+```
+get_dashboard(dashboard_id="<id>")
 ```
 
 Extract:
@@ -91,21 +127,23 @@ Give a direct verdict. Do not hedge. Use the following thresholds as a guide:
 
 **Yes - clear demand:**
 Total aggregate volume is meaningful, trend is Growing or Flat, and there are
-clear signals directly matching the idea. State the volume and the growth direction.
+clear signals directly matching the idea. State the volume and the growth
+direction plainly - "This is a clear yes" rather than "this seems promising."
 
 **Yes - but niche:**
-Volume is low but the trend is strongly Growing. This is a rising space. Worth
-creating if the brand wants to be early. State the volume, emphasize the growth
-trajectory.
+Volume is low but the trend is strongly Growing. This is a rising space.
+Worth creating if the brand wants to be early. State the volume, and make
+the case for the growth trajectory as the reason to move now.
 
 **Marginal - proceed with caution:**
-Volume is present but the trend is Contracting. Demand existed but is declining.
-Only worth creating if the brand has a specific reason to enter a shrinking space.
+Volume is present but the trend is Contracting. Demand existed but is
+declining. Say so directly: worth creating only if the brand has a specific
+reason to enter a shrinking space, otherwise pass.
 
 **No - insufficient demand:**
-Volume is very low or zero signals found. The idea does not have a meaningful
-audience yet. Do not invest in creating it unless the brand is intentionally
-trying to create the demand category.
+Volume is very low or zero signals found. The idea does not have a
+meaningful audience yet. Recommend against creating it unless the brand is
+intentionally trying to create the demand category.
 
 ---
 
@@ -116,9 +154,13 @@ Before building, say:
 
 **This is the primary output. Build the HTML artifact immediately. Do not write a text summary before or instead of the artifact.**
 
-Below the artifact, add 2-3 bullet points highlighting the most important insights from the data. One sentence each. The charts carry the detail — the bullets name the story.
+Below the artifact, add 2-3 bullet points highlighting the most important
+insights from the data. One sentence each, written as an analyst's read of
+the numbers, not a caption. The charts carry the detail; the bullets name
+the story.
 
-Build an interactive HTML artifact. Make it clean and decisive - the user needs a fast answer.
+Build an interactive HTML artifact. Make it clean and decisive - the user
+needs a fast answer.
 
 The artifact must show:
 - A large, prominent verdict indicator at the top: Yes / Yes (niche) / Marginal / No - color-coded green, yellow, orange, or red
@@ -140,16 +182,35 @@ Wait for their response. If they request changes, update the artifact and ask ag
 
 ---
 
-## Step 7: Save to MyTelescope
+## Step 7: Save to MyTelescope (only if a home for it exists)
 
-Once the user is happy, ask:
-> "Want me to save this to MyTelescope? Just say **save it**."
+`save_dashboard_artifact` attaches HTML onto an **existing** Data Room
+dashboard - there is no tool to create a new one from scratch, and Step 2
+deliberately didn't ask the agent to build one (to keep the verdict fast). So
+before offering to save, check what the user already has:
 
-If yes:
-1. Call `save_dashboard_artifact` with the final HTML artifact
-2. Call `generate_platform_link` and show the link immediately
+```
+list_dashboards()
+```
 
-> "Your dashboard is live. [Open on MyTelescope]([link])"
+- **A relevant dashboard already exists:** ask -
+  > "Want me to save this to your [dashboard name] dashboard? Just say **save it**."
+  On a clear yes:
+  ```
+  save_dashboard_artifact(
+      dashboard_id="<id>",
+      html_content="<the final HTML>",
+      generation_prompt="<the user's original request>"
+  )
+  ```
+  This **replaces** that dashboard's live native view with your HTML - a
+  commit, not a preview. Never call it before the user has seen the artifact
+  and explicitly confirmed. Show the returned link immediately:
+  > "Your dashboard is live. [Open on MyTelescope]([link])"
+- **No matching dashboard exists:** say so plainly - there's nowhere in
+  MyTelescope to save this yet. Don't slow the verdict down by asking the
+  agent to build one just to make the save step work; the artifact stands
+  as the deliverable in this chat.
 
 ---
 
@@ -162,11 +223,25 @@ to decide. Make the call and explain it briefly.
 Do not soften a negative result with unnecessary caveats or suggestions to
 explore other ideas unless the user asks.
 
+**Keep Step 2's instruction narrow.** Don't ask the agent to build a
+dashboard for a single-idea check - that trades the fast verdict this skill
+exists for. Save-time dashboard needs are handled separately in Step 7.
+
+**Never invent or self-compute demand data.** This MCP has no search/volume
+tools. Only use figures the agent (`instruct_agent`) or `get_dashboard`
+actually returns.
+
 **Format volumes correctly.** Use `1.2k` not `1200`. Always include the
 YoY change percentage with a sign: `+24%` or `-8%`.
 
+**Never invent a dashboard to save onto.** If `list_dashboards` has nothing
+that matches, tell the user - don't route through the agent to manufacture
+one just to make the save step work.
+
 **Vocabulary.** "Demand signals", "consumer interest", "monthly volume" -
 never "keywords", "search volume", "SEO", "queries".
+
+**No em dashes.** Use a hyphen or rewrite the sentence.
 
 ---
 
@@ -174,6 +249,10 @@ never "keywords", "search volume", "SEO", "queries".
 
 | Tool | Step | Purpose |
 |------|------|---------|
-| `get_location_details` | 1 | Resolve location name to ID |
-| `search_signals` | 2 | Find signals matching the content idea |
-| `get_demand_volume` | 3 | Volume and trend for matching signals |
+| `list_topics` / `list_entities` | 2 | Check for existing coverage before asking fresh |
+| `instruct_agent` | 2 | Ask for matching signals with volume/trend, without a dashboard build |
+| `continue_workflow` | 2 | Answer a clarifying question or steer the same thread |
+| `get_workflow_state` | 2 | Poll if the run doesn't return inline |
+| `get_dashboard` | 3 | Read structured figures if a dashboard was built/referenced |
+| `list_dashboards` | 7 | Check whether a dashboard already exists to attach the verdict to |
+| `save_dashboard_artifact` | 7 | Attach the final HTML onto that existing dashboard (returns the link) |

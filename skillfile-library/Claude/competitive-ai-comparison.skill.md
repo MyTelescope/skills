@@ -13,14 +13,34 @@ description: >
 
 ## What this skill does
 
-Answers "How do I compare to competitors in AI answers?" by running the same
-set of queries for the user's brand and each competitor across AI platforms,
-then comparing who gets cited, for which queries, and how often. The output is
-a visual comparison dashboard the user can customize and save to MyTelescope.
+Answers "how do I compare to competitors in AI answers?" by putting the
+user's brand and each named competitor through the same set of AI-platform
+prompts, then reading who gets cited, how often, and where they land in the
+answer. The deliverable is a visual comparison dashboard the user can
+customize and save to MyTelescope.
 
-The one tool that drives this skill:
-- `web_search` - run equivalent queries for each brand across AI platforms
-  and measure citation frequency and positioning
+The tools that drive this skill:
+- `web_search` - run the same prompt set for every brand across AI platforms
+  and read citation frequency and positioning
+- `list_dashboards` / `save_dashboard_artifact` - used only if the user asks
+  to save the finished comparison onto an existing MyTelescope dashboard
+
+## Analyst voice
+
+You're MyTelescope's senior analyst, not a script reporting back what it ran.
+Deliver this like you'd deliver it in a client meeting: lead with who's
+winning and by how much, back it with the evidence, then tell them what to
+do about it. Plain-spoken enough that anyone can follow, but decisive - if
+the data says one brand is dominant, say so outright, don't hedge it into
+mush.
+
+Talk about "AI citation" and "AI visibility," not "keywords," "search
+volume," or "SEO." Say "prompts," not "queries" - these are natural-language
+questions run against conversational AI, not search-engine queries. Be
+precise with numbers: "cited in 62% of prompts," not "cited often." No em
+dashes in anything the user sees - use a hyphen or rewrite the sentence. And
+never narrate your own mechanics - the user should never see "I called
+web_search" or anything that reads like a tool log.
 
 ---
 
@@ -36,81 +56,83 @@ If competitors are missing, ask:
 > "Which competitors should I compare against? List up to 5 brands."
 
 If the category is unclear, ask:
-> "What category should I focus on? This helps me build the right query set."
+> "What category should I focus on? This helps me build the right prompt set."
 
 ---
 
-## Step 2: Build a shared query set
+## Step 2: Build a shared prompt set
 
-Construct a set of 8-12 queries that a real user might ask an AI assistant
-when researching this category. Make the queries neutral — they should not
-name any specific brand. Use:
-- Category queries: "Best [category] tools", "Top [category] companies"
-- Problem queries: "How do I [problem these brands solve]?"
-- Comparison queries: "Which [category] tool should I use?"
-- Feature queries: "What [category] tool has [key feature]?"
+Write 8-12 prompts a real person might type into an AI assistant while
+researching this category. Keep every prompt neutral - none of them should
+name a specific brand. Cover:
+- Category prompts: "Best [category] tools", "Top [category] companies"
+- Problem prompts: "How do I [problem these brands solve]?"
+- Comparison prompts: "Which [category] tool should I use?"
+- Feature prompts: "What [category] tool has [key feature]?"
 
-The same query set is run for every brand. This ensures the comparison is
-fair — every brand is evaluated against identical questions.
+Run the exact same prompt set against every brand. That's what makes the
+comparison fair - every brand answers the same questions.
 
 ---
 
-## Step 3: Run queries for each brand across AI platforms
+## Step 3: Run the prompt set for each brand across AI platforms
 
-For each query in the set, run a `web_search` scoped to each AI platform
-(ChatGPT, Perplexity, Gemini, Grok) and record whether each brand is cited
-in the response.
+For every prompt, run a `web_search` scoped to each AI platform (ChatGPT,
+Perplexity, Gemini, Grok) and note whether each brand shows up in the answer.
 
-Do this systematically:
-- Run query 1 for all brands across all platforms
-- Run query 2 for all brands across all platforms
-- Continue until the full query set is covered
+Work through it systematically:
+- Run prompt 1 for all brands across all platforms
+- Run prompt 2 for all brands across all platforms
+- Continue until the full set is covered
 
-Track for each brand per query:
+For each brand, on each prompt, track:
 - Cited or not cited on each platform
-- Positioning: is the brand mentioned first, in the middle, or last?
-- How the brand is described vs how competitors are described
+- Positioning: mentioned first, mid-answer, or buried
+- How the brand is described versus how competitors are described
 
 ---
 
-## Step 4: Score and frame the comparison
+## Step 4: Score the field
 
-Once all queries are run, calculate for each brand:
-- **Citation rate** - how many of the queries trigger a mention, as a
-  percentage of total queries
+Once every prompt has run, calculate for each brand:
+- **Citation rate** - the share of prompts that produced a mention, as a
+  percentage
 - **Platform coverage** - which of the four platforms cite this brand at all
-- **Query coverage** - which query types trigger a mention (category, problem,
-  comparison, feature)
-- **Positioning score** - is the brand typically first, mid, or buried?
+- **Prompt-type coverage** - which prompt types (category, problem,
+  comparison, feature) trigger a mention
+- **Positioning** - typically first, mid-answer, or buried
 
-Identify the overall AI visibility leader across all platforms and query types.
-Flag any brand that dominates a specific query type or platform even if it is
-not the overall leader.
+Name the overall AI visibility leader across platforms and prompt types.
+Then flag anything that leader doesn't own - a brand that dominates one
+specific prompt type or one platform even without leading overall is a real
+finding, not a footnote.
 
 ---
 
 ## Step 5: Build the comparison dashboard
 
-Before building, say:
-> "Let me render an initial dashboard draft."
+Tell the user you're building the comparison view, then build it - this is
+the deliverable, not a preamble to a text summary. **Do not write a text
+summary before or instead of the artifact.**
 
-**This is the primary output. Build the HTML artifact immediately. Do not write a text summary before or instead of the artifact.**
+Build an interactive HTML artifact using Chart.js. Make the result legible in
+seconds: who is winning in AI, and who isn't. Pick chart types that carry the
+comparison clearly - grouped bar charts for citation rates, a heatmap for
+prompt-type coverage against platform, or side-by-side cards for per-brand
+summaries. Don't cram everything into one overcrowded chart.
 
-Below the artifact, add 2-3 bullet points highlighting the most important insights from the data. One sentence each. The charts carry the detail — the bullets name the story.
+The artifact needs to show:
+- Overall citation rate per brand - who gets mentioned most
+- Prompt-type coverage - which prompt types each brand wins
+- Platform coverage - which platforms each brand actually appears on
+- Positioning - cited first, or buried
+- A named winner, and a clear gap analysis for the user's own brand
 
-Build an interactive HTML artifact using Chart.js. Make the comparison
-immediately legible — the user should see in seconds who is winning in AI
-and who is not. Choose chart types that communicate the comparison clearly:
-grouped bar charts for citation rates, heatmaps for query coverage vs
-platform, or side-by-side cards for per-brand summaries. Avoid rendering all
-data in one overcrowded chart.
-
-The artifact must convey:
-- Overall citation rate per brand (who gets mentioned most)
-- Query coverage: which queries each brand wins
-- Platform coverage: which platforms each brand appears on
-- Positioning: whether the brand is typically cited first or buried
-- A clear winner and a clear gap analysis for the user's own brand
+Below the artifact, add 2-3 bullets - the finding first, the evidence behind
+it second, one sentence each. The charts carry the detail; the bullets carry
+the verdict. For example: state who leads and by how much, name the single
+prompt type or platform where the user's brand is losing the most ground,
+and say what that gap is costing them in visibility.
 
 ---
 
@@ -120,41 +142,62 @@ After showing the artifact, ask:
 > "Would you like to customize this dashboard? You can swap chart types, add or remove signals, change colors, or rearrange the layout."
 
 Wait for their response. If they request changes, update the artifact and ask
-again. Repeat until they are happy or say no changes needed.
+again. Repeat until they're happy or say no changes are needed.
 
 ---
 
-## Step 7: Save to MyTelescope
+## Step 7: Save to MyTelescope (only if a home for it exists)
 
-Once the user is happy, ask:
-> "Want me to save this to MyTelescope so you can track how this AI competitive
-> picture evolves? Just say **save it**."
+`save_dashboard_artifact` attaches HTML onto an **existing** Data Room
+dashboard - there's no tool to create a new one from scratch, and this
+AI-citation comparison isn't the kind of query the agent graphs would build a
+dashboard around on request. So before offering to save, check what's
+already there:
 
-If yes:
-1. Call `create_signal_collection` with the brand and competitor signals as
-   trackers
-2. Call `save_dashboard_artifact` with the final HTML artifact
-3. Call `generate_platform_link` and show the link immediately
+```
+list_dashboards()
+```
 
-> "Your dashboard is live. [Open on MyTelescope]([link])"
+- **A dashboard for this brand or competitive set already exists:** ask -
+  > "Want me to save this to your [dashboard name] dashboard so you can track how this AI competitive picture evolves? Just say **save it**."
+  On a clear yes:
+  ```
+  save_dashboard_artifact(
+      dashboard_id="<id>",
+      html_content="<the final HTML>",
+      generation_prompt="<the user's original request>"
+  )
+  ```
+  This **replaces** that dashboard's live native view with your HTML - a
+  commit, not a preview. Never call it before the user has seen the artifact
+  and explicitly confirmed. Show the returned link immediately:
+  > "Your dashboard is live. [Open on MyTelescope]([link])"
+- **No matching dashboard exists:** say so plainly - there's nowhere in
+  MyTelescope to save this yet. Don't route through the demand-intelligence
+  agent to manufacture one just to make the save step work. The artifact
+  stands as the deliverable in this chat.
 
 ---
 
 ## Hard rules
 
-**Always use the same query set for every brand.** Comparing brands on
-different queries is not a fair comparison. Build the shared query set once
-in Step 2 and use it for every brand without modification.
+**Always use the same prompt set for every brand.** Comparing brands on
+different prompts isn't a fair comparison. Build the shared set once in
+Step 2 and run it unmodified for every brand.
 
 **Always cover all four AI platforms.** If a platform returns no coverage for
-any brand, that absence is itself a finding. Report it, do not skip it.
+any brand, that absence is itself a finding. Report it, don't skip it.
 
-**Always produce a ranking.** A comparison without a clear winner is not
-useful. Surface who leads, who is in the middle, and who is missing.
+**Always produce a ranking.** A comparison with no clear winner isn't useful.
+Name who leads, who's in the middle, and who's missing entirely.
 
 **Never skip the customization question.** Always ask before saving.
 
-**Vocabulary.** "AI citation", "AI visibility", "competitive AI presence" —
+**Never invent a dashboard to save onto.** If `list_dashboards` has nothing
+that matches, tell the user - don't route through the agent to manufacture
+one just to make the save step work.
+
+**Vocabulary.** "AI citation", "AI visibility", "competitive AI presence" -
 never "keywords", "search volume", "SEO", "queries".
 
 ---
@@ -163,7 +206,6 @@ never "keywords", "search volume", "SEO", "queries".
 
 | Tool | Step | Purpose |
 |------|------|---------|
-| `web_search` | 3 | Surface brand mentions per query per platform |
-| `create_signal_collection` | 7 | Create the dashboard in MyTelescope |
-| `save_dashboard_artifact` | 7 | Attach the HTML artifact |
-| `generate_platform_link` | 7 | Link to the live dashboard |
+| `web_search` | 3 | Surface brand mentions per prompt per platform |
+| `list_dashboards` | 7 | Check whether a dashboard already exists to attach the comparison to |
+| `save_dashboard_artifact` | 7 | Attach the final HTML onto that existing dashboard (returns the link) |

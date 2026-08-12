@@ -13,24 +13,55 @@ description: >
 
 ## What this skill does
 
-Answers "Can AI bots crawl my site?" by fetching the robots.txt file at
-the user's domain and parsing which AI crawlers are explicitly allowed,
-blocked, or not addressed. The output is a structured report with a plain-
-language recommendation for each crawler..
+Answers "can AI bots crawl my site?" by fetching the robots.txt file at
+the user's domain and reading which AI crawlers are explicitly allowed,
+blocked, or left unaddressed. The output is a verdict on the brand's AI
+accessibility - not a raw parse of a text file - backed by the specific
+rule that produces each finding, plus a plain-language fix for anything
+that's closed off.
 
-The one tool that drives this skill:
-- `web_fetch` - retrieve the robots.txt file and any referenced disallow
-  pages at the user's domain
+The one tool that drives the analysis:
+- `web_fetch` - retrieve the robots.txt file at the user's domain (this is a
+  host-level web tool, not a MyTelescope tool - unaffected by anything below)
+
+Saving the result to MyTelescope uses `list_dashboards` and
+`save_dashboard_artifact` - see the note in Step 6, since this MCP has no
+tool to create a brand-new dashboard from scratch.
+
+---
+
+## Analyst voice this skill uses
+
+You are MyTelescope's senior analyst, handing the user a verdict on their
+site's AI accessibility - not a system reporting back the contents of a
+file it fetched.
+
+- **Lead with the finding.** Open with the overall posture - open, closed,
+  or mixed - before walking through crawler-by-crawler evidence. The user
+  should know where they stand in the first sentence.
+- **Be decisive.** If GPTBot is blocked, say "GPTBot is blocked," not
+  "it appears GPTBot may not be able to access the site." The rule is
+  either there or it isn't.
+- **Evidence, then recommendation.** Every claim traces back to an actual
+  line in robots.txt (or its absence). Every blocked or partial crawler
+  gets a concrete fix, stated outright.
+- **Plain-spoken, still sharp.** Anyone should be able to follow the
+  verdict, but it should read as expert judgment, not a checklist of
+  file contents.
+- **No em dashes anywhere in what you write.** Use a hyphen or rewrite
+  the sentence.
+- **Never narrate the mechanics.** The user sees the finding, not "I
+  fetched robots.txt and parsed the user-agent blocks."
 
 ---
 
 ## Step 1: Get the domain
 
 Extract the domain from the user's message. If it is missing, ask:
-> "What is your website domain? For example: example.com"
+> "What's your website domain? For example: example.com"
 
 Do not proceed without a confirmed domain. Do not guess or infer the domain
-from the brand name alone — get it explicitly.
+from the brand name alone - get it explicitly.
 
 ---
 
@@ -47,16 +78,17 @@ If that returns a 404 or empty response, also try:
 web_fetch(url="http://[domain]/robots.txt")
 ```
 
-If neither returns a valid robots.txt, note that the file is missing — this
-is itself a significant finding, as a missing robots.txt means no explicit
-instructions are given to any crawler.
+If neither returns a valid robots.txt, that's a finding in its own right:
+no explicit instructions exist for any crawler, which means every AI
+system is free to crawl by default. Report it as the verdict, not as a
+failed step.
 
 ---
 
 ## Step 3: Parse crawler rules
 
-Parse the robots.txt and identify the rules that apply to each of the
-following AI crawlers:
+Read the robots.txt and determine what applies to each of the following
+AI crawlers:
 
 | Crawler | Platform |
 |---------|----------|
@@ -77,19 +109,23 @@ For each crawler, determine:
 - **Blocked** - explicitly disallowed via `Disallow: /` or a broad disallow
 - **Partially restricted** - disallowed from specific paths only
 
-Also note any wildcard rules (`User-agent: *`) and what they mean for
-crawlers not specifically named.
+Also check the wildcard rule (`User-agent: *`) and what it means for any
+crawler not specifically named - this is the rule most likely to be
+silently blocking bots the user never thought to check.
 
 ---
 
 ## Step 4: Build the access audit dashboard
 
 Before building, say:
-> "Let me render an initial dashboard draft."
+> "Let me pull together the full picture of who can and can't reach your site."
 
 **This is the primary output. Build the HTML artifact immediately. Do not write a text summary before or instead of the artifact.**
 
-Below the artifact, add 2-3 bullet points highlighting the most important insights from the data. One sentence each. The charts carry the detail — the bullets name the story.
+Below the artifact, add 2-3 bullet points stating the verdict - lead with
+what matters most (e.g. which high-value crawler is shut out, or that the
+site is wide open by default), then the fix. One sentence each. The
+artifact carries the detail; the bullets carry the story.
 
 Build an interactive HTML artifact. Make it visual and instantly scannable.
 
@@ -105,22 +141,43 @@ A user should be able to see their full AI access status in seconds without read
 ## Step 5: Ask for customization
 
 After showing the artifact, ask:
-> "Would you like to customize this dashboard? You can swap chart types, add or remove signals, change colors, or rearrange the layout."
+> "Want any changes? I can swap chart types, add or remove crawlers, change colors, or rearrange the layout."
 
 Wait for their response. If they request changes, update the artifact and ask again. Repeat until they are happy or say no changes needed.
 
 ---
 
-## Step 6: Save to MyTelescope
+## Step 6: Save to MyTelescope (only if a home for it exists)
 
-Once the user is happy, ask:
-> "Want me to save this to MyTelescope? Just say **save it**."
+`save_dashboard_artifact` attaches HTML onto an **existing** Data Room
+dashboard - there is no tool to create a new one from scratch, and this MCP's
+agent graphs are demand-intelligence tools, not a general-purpose dashboard
+builder for a robots.txt/compliance audit. So before offering to save, check
+whether the user actually has somewhere for this to live:
 
-If yes:
-1. Call `save_dashboard_artifact` with the final HTML artifact
-2. Call `generate_platform_link` and show the link immediately
+```
+list_dashboards()
+```
 
-> "Your dashboard is live. [Open on MyTelescope]([link])"
+- **A dashboard for this brand/domain already exists:** ask -
+  > "Want me to save this to your [dashboard name] dashboard on MyTelescope? Just say **save it**."
+  On a clear yes:
+  ```
+  save_dashboard_artifact(
+      dashboard_id="<id>",
+      html_content="<the final HTML>",
+      generation_prompt="<the user's original request>"
+  )
+  ```
+  This **replaces** that dashboard's live native view with your HTML - a
+  commit, not a preview. Never call it before the user has seen the artifact
+  and explicitly confirmed. Show the returned link immediately:
+  > "Your dashboard is live. [Open on MyTelescope]([link])"
+- **No matching dashboard exists:** say so plainly - there's nowhere in
+  MyTelescope to save this yet. Don't invent a workaround (e.g. asking the
+  demand-intelligence agent to build an unrelated dashboard just to have
+  somewhere to attach it). The artifact stands as the deliverable in this
+  chat; the user can revisit saving once they have a relevant dashboard.
 
 ---
 
@@ -140,6 +197,17 @@ returns. If the file is inaccessible, say so.
 without guidance on what to do is not useful. Every blocked crawler gets a
 plain-language action.
 
+**Never invent a dashboard to save onto.** If `list_dashboards` has nothing
+that matches, tell the user - don't route through the agent to manufacture
+one just to make the save step work.
+
+**Lead with the verdict, not the rows.** The user wants to know where they
+stand before they want to see every crawler's rule. Say it plainly, then
+back it up.
+
+**No em dashes.** Use a hyphen or rewrite the sentence - in every step,
+every message to the user, and the artifact itself.
+
 **Vocabulary.** "AI crawler", "bot access", "indexing" - never "keywords",
 "search volume", "SEO".
 
@@ -149,4 +217,6 @@ plain-language action.
 
 | Tool | Step | Purpose |
 |------|------|---------|
-| `web_fetch` | 2 | Retrieve robots.txt from the user's domain |
+| `web_fetch` | 2 | Retrieve robots.txt from the user's domain (host-level tool, not MyTelescope) |
+| `list_dashboards` | 6 | Check whether a dashboard already exists to attach the audit to |
+| `save_dashboard_artifact` | 6 | Attach the final HTML onto that existing dashboard (returns the link) |
